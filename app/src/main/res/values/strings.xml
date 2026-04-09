@@ -31,4 +31,11 @@
     <string name="activation_status_checking_configuration">Проверяем конфигурацию</string>
     <string name="activation_status_preparing">Подготавливаем активацию</string>
     <string name="activation_status_syncing_profile">Синхронизация профиля устройства</string>
+    <string name="activation_failed_title">Ошибка активации</string>
+    <string name="activation_failed_message">Не удалось завершить активацию. Попробуйте снова.</string>
+    <string name="network_permission_required">Для сканирования и подключения Wi-Fi требуется разрешение.</string>
+    <string name="grant_permission">Выдать разрешение</string>
+    <string name="signal_weak">Слабый</string>
+    <string name="signal_medium">Средний</string>
+    <string name="signal_strong">Сильный</string>
 </resources>

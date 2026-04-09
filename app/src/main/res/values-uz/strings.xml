@@ -31,4 +31,11 @@
     <string name="activation_status_checking_configuration">Konfiguratsiya tekshirilmoqda</string>
     <string name="activation_status_preparing">Faollashtirish tayyorlanmoqda</string>
     <string name="activation_status_syncing_profile">Qurilma profili sinxronlanmoqda</string>
+    <string name="activation_failed_title">Faollashtirish xatosi</string>
+    <string name="activation_failed_message">Faollashtirishni yakunlab bo‘lmadi. Iltimos, qayta urinib ko‘ring.</string>
+    <string name="network_permission_required">Wi‑Fi tarmoqlarini skanerlash va ulanish uchun ruxsat kerak.</string>
+    <string name="grant_permission">Ruxsat berish</string>
+    <string name="signal_weak">Zaif</string>
+    <string name="signal_medium">O‘rtacha</string>
+    <string name="signal_strong">Kuchli</string>
 </resources>

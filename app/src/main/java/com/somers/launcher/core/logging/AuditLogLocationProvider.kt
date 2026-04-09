@@ -4,12 +4,16 @@ import android.content.Context
 import java.io.File
 
 class AuditLogLocationProvider(private val context: Context) {
-    fun resolve(): File {
+    fun resolve(): File = File(baseDir(), "launcher_audit.jsonl")
+
+    fun resolveArchive(): File = File(baseDir(), "launcher_audit.prev.jsonl")
+
+    private fun baseDir(): File {
         val externalBase = context.getExternalFilesDir(null)
         return if (externalBase != null) {
-            File(externalBase, "audit/launcher_audit.jsonl")
+            File(externalBase, "audit")
         } else {
-            File(context.filesDir, "audit/launcher_audit.jsonl")
+            File(context.filesDir, "audit")
         }
     }
 }

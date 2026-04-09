@@ -31,4 +31,11 @@
     <string name="activation_status_checking_configuration">Կարգավորումների ստուգում</string>
     <string name="activation_status_preparing">Ակտիվացման պատրաստում</string>
     <string name="activation_status_syncing_profile">Սարքի պրոֆիլի համաժամացում</string>
+    <string name="activation_failed_title">Ակտիվացման սխալ</string>
+    <string name="activation_failed_message">Չհաջողվեց ավարտել ակտիվացումը։ Խնդրում ենք կրկին փորձել։</string>
+    <string name="network_permission_required">Wi‑Fi ցանցեր որոնելու և միանալու համար անհրաժեշտ է թույլտվություն։</string>
+    <string name="grant_permission">Տրամադրել թույլտվություն</string>
+    <string name="signal_weak">Թույլ</string>
+    <string name="signal_medium">Միջին</string>
+    <string name="signal_strong">Ուժեղ</string>
 </resources>
