@@ -35,8 +35,16 @@ data class ActivationResult(
     val success: Boolean,
     val responseCode: String,
     val responseMessage: String,
-    val targetPackage: String?
+    val failureType: ActivationFailureType? = null,
+    val diagnosticDetails: String? = null
 )
+
+enum class ActivationFailureType {
+    API_ERROR,
+    TRANSPORT,
+    TIMEOUT,
+    MALFORMED_RESPONSE
+}
 
 data class ErrorDetails(
     val title: String,

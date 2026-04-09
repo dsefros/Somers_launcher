@@ -33,6 +33,9 @@
     <string name="activation_status_syncing_profile">Syncing device profile</string>
     <string name="activation_failed_title">Activation failed</string>
     <string name="activation_failed_message">Unable to complete activation. Please try again.</string>
+    <string name="activation_failed_timeout_message">Activation request timed out. Check internet and try again.</string>
+    <string name="activation_failed_transport_message">Could not reach activation service. Check connectivity and try again.</string>
+    <string name="activation_failed_malformed_message">Activation service returned invalid data. Contact support.</string>
     <string name="network_permission_required">Wi-Fi permission is required to scan and connect networks.</string>
     <string name="grant_permission">Grant permission</string>
     <string name="signal_weak">Weak</string>
