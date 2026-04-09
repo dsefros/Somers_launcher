@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">Somers Launcher</string>
+    <string name="welcome_title">Welcome</string>
+    <string name="start">Start</string>
+    <string name="language">Language</string>
+    <string name="language_selection_title">Language selection</string>
+    <string name="network_title">Network setup</string>
+    <string name="refresh">Refresh</string>
+    <string name="password">Password</string>
+    <string name="connect">Connect</string>
+    <string name="connecting">Connecting…</string>
+    <string name="next">Next</string>
+    <string name="skip">Skip</string>
+    <string name="please_wait">Please wait</string>
+    <string name="return_to_welcome">Back to welcome</string>
+    <string name="already_activated">Already activated</string>
+    <string name="open_pass_through">Open activated mode</string>
+    <string name="lottie_placeholder">[Lottie placeholder]</string>
+    <string name="activation_placeholder">[Activation animation placeholder]</string>
+    <string name="network_selected_not_connected">Network selected. Connect to continue.</string>
+    <string name="network_connected_no_internet">Wi-Fi connected, but internet is unavailable.</string>
+    <string name="network_connection_error">Connection failed. Check password and try again.</string>
+    <string name="network_connecting">Connecting to network…</string>
+    <string name="network_connected_with_internet">Wi-Fi connected, internet is available.</string>
+    <string name="error_default_title">Error</string>
+    <string name="error_default_message">Unknown issue</string>
+    <string name="error_code">Code: %1$s</string>
+    <string name="language_current">%1$s: %2$s</string>
+    <string name="network_item_suffix">%1$s %2$s</string>
+    <string name="security_lock">🔒</string>
+    <string name="activation_status_checking_configuration">Checking configuration</string>
+    <string name="activation_status_preparing">Preparing activation</string>
+    <string name="activation_status_syncing_profile">Syncing device profile</string>
+</resources>

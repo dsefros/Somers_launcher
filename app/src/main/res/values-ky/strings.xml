@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">Somers Launcher</string>
+    <string name="welcome_title">Кош келиңиз</string>
+    <string name="start">Баштоо</string>
+    <string name="language">Тил</string>
+    <string name="language_selection_title">Тилди тандоо</string>
+    <string name="network_title">Тармак орнотуусу</string>
+    <string name="refresh">Жаңыртуу</string>
+    <string name="password">Сырсөз</string>
+    <string name="connect">Туташуу</string>
+    <string name="connecting">Туташууда…</string>
+    <string name="next">Кийинки</string>
+    <string name="skip">Өткөрүп жиберүү</string>
+    <string name="please_wait">Сураныч, күтүңүз</string>
+    <string name="return_to_welcome">Артка кайтуу</string>
+    <string name="already_activated">Буга чейин активдешкен</string>
+    <string name="open_pass_through">Активдешкен режимди ачуу</string>
+    <string name="lottie_placeholder">[Lottie ордуна]</string>
+    <string name="activation_placeholder">[Активдештирүү анимациясынын орду]</string>
+    <string name="network_selected_not_connected">Тармак тандалды. Улантуу үчүн туташыңыз.</string>
+    <string name="network_connected_no_internet">Wi‑Fi туташкан, бирок интернет жок.</string>
+    <string name="network_connection_error">Туташуу катасы. Сырсөздү текшерип, кайра аракет кылыңыз.</string>
+    <string name="network_connecting">Тармакка туташууда…</string>
+    <string name="network_connected_with_internet">Wi‑Fi туташкан, интернет жеткиликтүү.</string>
+    <string name="error_default_title">Ката</string>
+    <string name="error_default_message">Белгисиз ката</string>
+    <string name="error_code">Код: %1$s</string>
+    <string name="language_current">%1$s: %2$s</string>
+    <string name="network_item_suffix">%1$s %2$s</string>
+    <string name="security_lock">🔒</string>
+    <string name="activation_status_checking_configuration">Конфигурация текшерилүүдө</string>
+    <string name="activation_status_preparing">Активдештирүү даярдалууда</string>
+    <string name="activation_status_syncing_profile">Түзмөктүн профили шайкештешүүдө</string>
+</resources>
