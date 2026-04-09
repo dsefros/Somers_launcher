@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">Somers Launcher</string>
+    <string name="welcome_title">Хуш омадед</string>
+    <string name="start">Оғоз</string>
+    <string name="language">Забон</string>
+    <string name="language_selection_title">Интихоби забон</string>
+    <string name="network_title">Танзими шабака</string>
+    <string name="refresh">Навсозӣ</string>
+    <string name="password">Рамз</string>
+    <string name="connect">Пайваст шудан</string>
+    <string name="connecting">Пайвастшавӣ…</string>
+    <string name="next">Баъдӣ</string>
+    <string name="skip">Гузаштан</string>
+    <string name="please_wait">Лутфан интизор шавед</string>
+    <string name="return_to_welcome">Бозгашт</string>
+    <string name="already_activated">Аллакай фаъол шудааст</string>
+    <string name="open_pass_through">Кушодани ҳолати пас аз фаъолсозӣ</string>
+    <string name="lottie_placeholder">[Ҷойгузини Lottie]</string>
+    <string name="activation_placeholder">[Ҷойгузини аниматсияи фаъолсозӣ]</string>
+    <string name="network_selected_not_connected">Шабака интихоб шуд. Барои идома пайваст шавед.</string>
+    <string name="network_connected_no_internet">Wi‑Fi пайваст аст, аммо интернет нест.</string>
+    <string name="network_connection_error">Хатои пайвастшавӣ. Рамзро санҷед ва боз кӯшиш кунед.</string>
+    <string name="network_connecting">Пайвастшавӣ ба шабака…</string>
+    <string name="network_connected_with_internet">Wi‑Fi пайваст аст, интернет дастрас аст.</string>
+    <string name="error_default_title">Хато</string>
+    <string name="error_default_message">Хатои номаълум</string>
+    <string name="error_code">Код: %1$s</string>
+    <string name="language_current">%1$s: %2$s</string>
+    <string name="network_item_suffix">%1$s %2$s</string>
+    <string name="security_lock">🔒</string>
+    <string name="activation_status_checking_configuration">Санҷиши танзимот</string>
+    <string name="activation_status_preparing">Омодасозии фаъолсозӣ</string>
+    <string name="activation_status_syncing_profile">Ҳамоҳангсозии профили дастгоҳ</string>
+</resources>
