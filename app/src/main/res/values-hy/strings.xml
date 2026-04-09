@@ -33,6 +33,9 @@
     <string name="activation_status_syncing_profile">Սարքի պրոֆիլի համաժամացում</string>
     <string name="activation_failed_title">Ակտիվացման սխալ</string>
     <string name="activation_failed_message">Չհաջողվեց ավարտել ակտիվացումը։ Խնդրում ենք կրկին փորձել։</string>
+    <string name="activation_failed_timeout_message">Ակտիվացման սպասման ժամանակը լրացել է։ Ստուգեք ինտերնետը և կրկին փորձեք։</string>
+    <string name="activation_failed_transport_message">Չհաջողվեց կապ հաստատել ակտիվացման ծառայության հետ։ Ստուգեք կապը և կրկին փորձեք։</string>
+    <string name="activation_failed_malformed_message">Ակտիվացման ծառայությունը վերադարձրել է սխալ պատասխան։ Դիմեք աջակցությանը։</string>
     <string name="network_permission_required">Wi‑Fi ցանցեր որոնելու և միանալու համար անհրաժեշտ է թույլտվություն։</string>
     <string name="grant_permission">Տրամադրել թույլտվություն</string>
     <string name="signal_weak">Թույլ</string>

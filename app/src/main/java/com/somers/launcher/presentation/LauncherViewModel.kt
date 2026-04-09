@@ -9,7 +9,7 @@ import com.somers.launcher.core.config.LauncherConfigProvider
 import com.somers.launcher.core.logging.JsonFileAuditLogger
 import com.somers.launcher.data.AppDataStore
 import com.somers.launcher.data.AppLocaleManager
-import com.somers.launcher.data.MockActivationClient
+import com.somers.launcher.data.api.RealActivationClient
 import com.somers.launcher.data.device.AndroidConnectivityChecker
 import com.somers.launcher.data.device.AndroidHandoffManager
 import com.somers.launcher.data.device.AndroidNetworkPermissionManager
@@ -254,26 +254,48 @@ class LauncherViewModel(
         viewModelScope.launch {
             logger.log("activation_started")
             val result = activationClient.activate()
-            logger.log("activation_result", mapOf("code" to result.responseCode, "message" to result.responseMessage, "success" to result.success.toString()))
+            logger.log(
+                "activation_result",
+                mapOf(
+                    "code" to result.responseCode,
+                    "message" to result.responseMessage,
+                    "success" to result.success.toString(),
+                    "failure_type" to (result.failureType?.name ?: "")
+                )
+            )
             statusJob?.cancel()
             _state.value = _state.value.copy(keepScreenAwake = false)
             val keepAwakeOff = systemControl.keepScreenAwake(false)
             logger.log("system_control_keep_awake", mapOf("enabled" to "false", "success" to keepAwakeOff.success.toString(), "details" to keepAwakeOff.details))
 
             if (result.success) {
-                changeStage(Stage.COMPLETED)
                 store.setActivated(true)
                 val handoff = handoffManager.handoff(config.targetApp)
                 when (handoff) {
                     is HandoffResult.Success -> logger.log("handoff_result", mapOf("result" to "success", "component" to handoff.launchedComponent))
                     is HandoffResult.Failure -> logger.log("handoff_result", mapOf("result" to "failure", "reason" to handoff.reason.name, "details" to handoff.details))
                 }
+                // Explicit PR-3 policy: launcher remains installed and serves as deterministic
+                // pass-through fallback after activation (OEM-specific disable remains deferred).
+                logger.log("launcher_disable_deferred", mapOf("reason" to "oem_specific_behavior_deferred"))
+                changeStage(Stage.PASSTHROUGH)
             } else {
                 _state.value = _state.value.copy(
                     stage = Stage.ERROR,
-                    error = UiMappers.activationFailureError(stringProvider, result.responseCode)
+                    error = UiMappers.activationFailureError(
+                        stringProvider = stringProvider,
+                        code = result.responseCode,
+                        failureType = result.failureType
+                    )
                 )
-                logger.log("error_shown", mapOf("code" to result.responseCode))
+                logger.log(
+                    "error_shown",
+                    mapOf(
+                        "code" to result.responseCode,
+                        "failure_type" to (result.failureType?.name ?: ""),
+                        "details" to (result.diagnosticDetails ?: "")
+                    )
+                )
             }
         }
     }
@@ -310,7 +332,10 @@ class LauncherViewModel(
                     localeManager = AppLocaleManager(store),
                     wifiManager = AndroidWifiManager(context),
                     connectivityChecker = AndroidConnectivityChecker(context, config.reachabilityEndpoints),
-                    activationClient = MockActivationClient(shouldSucceed = true),
+                    activationClient = RealActivationClient(
+                        endpoint = config.activationEndpoint,
+                        timeoutMs = config.activationTimeoutMs
+                    ),
                     handoffManager = AndroidHandoffManager(context),
                     logger = JsonFileAuditLogger(context),
                     vendorSelector = vendorSelector,

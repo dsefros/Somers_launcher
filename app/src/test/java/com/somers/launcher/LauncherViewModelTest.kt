@@ -2,6 +2,7 @@ package com.somers.launcher
 
 import com.somers.launcher.core.config.LauncherConfig
 import com.somers.launcher.domain.ActivationClient
+import com.somers.launcher.domain.ActivationFailureType
 import com.somers.launcher.domain.ActivationResult
 import com.somers.launcher.domain.ActivationStateStore
 import com.somers.launcher.domain.AppLanguage
@@ -56,13 +57,15 @@ class LauncherViewModelTest {
     }
 
     @Test
-    fun activationSuccess_movesToCompletedAndMarksActivated() = runTest(dispatcher) {
+    fun activationSuccess_movesToPassThrough_marksActivated_andHandoffs() = runTest(dispatcher) {
         val store = FakeStore()
-        val vm = createVm(store, success = true)
+        val handoffManager = RecordingHandoffManager()
+        val vm = createVm(store, success = true, handoffManager = handoffManager)
         vm.onAction(LauncherAction.SkipWithMobile)
         advanceUntilIdle()
-        assertEquals(Stage.COMPLETED, vm.state.value.stage)
+        assertEquals(Stage.PASSTHROUGH, vm.state.value.stage)
         assertEquals(true, store.activatedFlow.first())
+        assertEquals(1, handoffManager.calls)
     }
 
     @Test
@@ -83,6 +86,62 @@ class LauncherViewModelTest {
 
         assertEquals(NetworkPermissionState.UNKNOWN, vm.state.value.networkPermissionState)
         assertEquals(listOf("perm"), vm.state.value.requiredNetworkPermissions)
+    }
+
+    @Test
+    fun activationFailure_showsError_andDoesNotPersistActivated_orHandoff() = runTest(dispatcher) {
+        val store = FakeStore()
+        val handoffManager = RecordingHandoffManager()
+        val vm = createVm(store, success = false, handoffManager = handoffManager)
+
+        vm.onAction(LauncherAction.SkipWithMobile)
+        advanceUntilIdle()
+
+        assertEquals(Stage.ERROR, vm.state.value.stage)
+        assertEquals(false, store.activatedFlow.first())
+        assertEquals(0, handoffManager.calls)
+    }
+
+    @Test
+    fun activationTimeout_showsTimeoutMessage() = runTest(dispatcher) {
+        val store = FakeStore()
+        val vm = createVm(
+            store = store,
+            success = false,
+            activationResult = ActivationResult(
+                success = false,
+                responseCode = "TIMEOUT",
+                responseMessage = "Activation timed out",
+                failureType = ActivationFailureType.TIMEOUT
+            )
+        )
+
+        vm.onAction(LauncherAction.SkipWithMobile)
+        advanceUntilIdle()
+
+        assertEquals(Stage.ERROR, vm.state.value.stage)
+        assertEquals("Activation timed out", vm.state.value.error?.message)
+    }
+
+    @Test
+    fun activationTransportFailure_showsTransportMessage() = runTest(dispatcher) {
+        val store = FakeStore()
+        val vm = createVm(
+            store = store,
+            success = false,
+            activationResult = ActivationResult(
+                success = false,
+                responseCode = "NETWORK_ERROR",
+                responseMessage = "Activation transport failed",
+                failureType = ActivationFailureType.TRANSPORT
+            )
+        )
+
+        vm.onAction(LauncherAction.SkipWithMobile)
+        advanceUntilIdle()
+
+        assertEquals(Stage.ERROR, vm.state.value.stage)
+        assertEquals("Could not reach activation service", vm.state.value.error?.message)
     }
 
 
@@ -118,11 +177,36 @@ class LauncherViewModelTest {
         assertEquals(NetworkUiState.CONNECTED_NO_INTERNET, vm.state.value.networkUiState)
     }
 
+    @Test
+    fun activationSuccess_handoffUsesConfiguredTargetOnly() = runTest(dispatcher) {
+        val store = FakeStore()
+        val handoffManager = RecordingHandoffManager()
+        val vm = createVm(
+            store = store,
+            success = true,
+            handoffManager = handoffManager,
+            config = LauncherConfig(
+                targetApp = HandoffTarget(
+                    packageName = "com.example.config.target",
+                    activityName = "com.example.config.TargetActivity"
+                )
+            )
+        )
+        vm.onAction(LauncherAction.SkipWithMobile)
+        advanceUntilIdle()
+
+        assertEquals("com.example.config.target", handoffManager.lastTarget?.packageName)
+        assertEquals("com.example.config.TargetActivity", handoffManager.lastTarget?.activityName)
+    }
+
     private fun createVm(
         store: FakeStore,
         success: Boolean,
         wifiInternet: Boolean = true,
         hasPermission: Boolean = true,
+        activationResult: ActivationResult? = null,
+        handoffManager: HandoffManager = RecordingHandoffManager(),
+        config: LauncherConfig = LauncherConfig(),
     ): LauncherViewModel = LauncherViewModel(
         store = store,
         localeManager = object : LocaleManager {
@@ -143,11 +227,13 @@ class LauncherViewModelTest {
             override suspend fun currentWifiInternetAvailable(): Boolean = wifiFlow.value
         },
         activationClient = object : ActivationClient {
-            override suspend fun activate(): ActivationResult = if (success) ActivationResult(true, "200", "ok", "pkg") else ActivationResult(false, "500", "fail", null)
+            override suspend fun activate(): ActivationResult = activationResult ?: if (success) {
+                ActivationResult(true, "200", "ok")
+            } else {
+                ActivationResult(false, "500", "fail")
+            }
         },
-        handoffManager = object : HandoffManager {
-            override suspend fun handoff(target: HandoffTarget): HandoffResult = HandoffResult.Success(target.packageName)
-        },
+        handoffManager = handoffManager,
         logger = object : AuditLogger { override suspend fun log(event: String, payload: Map<String, String>) = Unit },
         vendorSelector = object : VendorStrategySelector { override fun select(configVendorOverride: VendorType?) = VendorType.DEFAULT },
         systemControl = object : VendorSystemControl {
@@ -157,7 +243,7 @@ class LauncherViewModelTest {
             override suspend fun prepareTemporaryLauncherRole() = SystemActionResult(false, "todo")
             override suspend fun disableLauncherForFutureStartup() = SystemActionResult(false, "todo")
         },
-        config = LauncherConfig(),
+        config = config,
         networkPermissionManager = object : NetworkPermissionManager {
             override fun requiredPermissions(): List<String> = listOf("perm")
             override fun hasRequiredPermissions(): Boolean = hasPermission
@@ -166,10 +252,24 @@ class LauncherViewModelTest {
             override fun get(id: Int): String = when (id) {
                 R.string.activation_failed_title -> "Activation failed"
                 R.string.activation_failed_message -> "Unable to complete activation"
+                R.string.activation_failed_timeout_message -> "Activation timed out"
+                R.string.activation_failed_transport_message -> "Could not reach activation service"
+                R.string.activation_failed_malformed_message -> "Activation service returned invalid data"
                 else -> ""
             }
         }
     )
+
+    private class RecordingHandoffManager : HandoffManager {
+        var calls: Int = 0
+        var lastTarget: HandoffTarget? = null
+
+        override suspend fun handoff(target: HandoffTarget): HandoffResult {
+            calls += 1
+            lastTarget = target
+            return HandoffResult.Success(target.packageName)
+        }
+    }
 
     private class FakeStore(activated: Boolean = false) : ActivationStateStore {
         override val activatedFlow = MutableStateFlow(activated)

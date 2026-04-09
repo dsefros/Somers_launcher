@@ -24,7 +24,7 @@ class UiMappersTest {
             }
         }
 
-        val err = UiMappers.activationFailureError(provider, "503")
+        val err = UiMappers.activationFailureError(provider, "503", null)
         assertEquals("Localized Title", err.title)
         assertEquals("Localized Message", err.message)
         assertEquals("503", err.code)

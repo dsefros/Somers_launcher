@@ -1,79 +1,65 @@
-# Somers Launcher (PR-2 device integration layer)
+# Somers Launcher (PR-3 activation-ready flow)
 
-## What PR-2 makes real
+## What PR-3 now makes real
 
-This PR extends the merged PR-1 skeleton with real Android device-side integration points while keeping activation-agent business contract integration deferred to PR-3.
+PR-3 completes the real activation flow from startup to target-app handoff:
 
-Implemented in PR-2:
-- Vendor-aware strategy layer for ANFU / NewPOS / Newland with explicit fallback and TODO-safe adapters.
-- Real Android Wi-Fi scan/connect integration (`WifiManager`, `ConnectivityManager`) behind domain ports.
-- Real internet reachability checks for Wi-Fi and mobile transports using multiple public endpoints.
-- Controlled launcher behavior primitives:
-  - portrait-only activity
-  - in-app back routing for onboarding
-  - keep-screen-awake during activation stage
-  - temporary launcher-role extension points (prepared, partially deferred)
-- Real app handoff primitive by package / explicit activity with structured failure mapping.
-- Hardened JSONL audit logging with file rotation.
-- Config object for target app, reachability endpoints, vendor override, and feature flags.
+- `startup gate -> onboarding -> network setup -> real activation API call -> success policy -> handoff`
+- Activation success now persists `activated=true`, attempts handoff to configured target app, and routes launcher into pass-through mode.
+- On next app launch, `activated=true` skips onboarding and goes directly to pass-through behavior.
+- Activation failures do **not** set `activated=true`; they show localized, user-safe error text while keeping response diagnostics in logs.
+- Activation network behavior now maps API errors, transport failures, request timeout, and malformed JSON responses explicitly.
+- Target app selection is **config-only** (build config); activation API does not override handoff target.
+- Activation transport uses an intentional **empty-body POST** handshake with explicit JSON headers (`Accept` + `Content-Type: application/json`).
 
-## Vendor abstraction structure
+## Runtime configuration required
 
-- `domain/Ports.kt`: core interfaces (`VendorSystemControl`, `VendorStrategySelector`, `WifiManager`, `ConnectivityChecker`, `HandoffManager`).
-- `data/vendor/BuildVendorStrategySelector.kt`: runtime vendor resolution from build fingerprint (or config override).
-- `data/vendor/VendorSystemControls.kt`: default + ANFU + NewPOS + Newland adapters.
+Configuration is build-config driven (see `app/build.gradle.kts` defaults):
 
-> Important: vendor SDK-specific method calls are intentionally not faked. Unknown SDK paths are marked as TODO and return explicit non-success `SystemActionResult` values.
+- `ACTIVATION_ENDPOINT` (full URL for activation API POST)
+- `ACTIVATION_TIMEOUT_MS` (request timeout in milliseconds)
+- `TARGET_APP_PACKAGE` (handoff package)
+- `TARGET_APP_ACTIVITY` (optional explicit activity, empty string means package launch)
 
-## Real network behavior notes
+Override mechanism (real and supported):
 
-- Wi-Fi scanning/connection uses platform APIs and respects platform permission/policy constraints.
-- Android 13+ requires runtime `NEARBY_WIFI_DEVICES`; Android 12 and below use runtime `ACCESS_FINE_LOCATION` for scan/connect discovery behavior.
-- Before requesting runtime permission, the network step remains in an explicit not-yet-requested state; after denial it shows a permission-required state (not a misleading empty network list).
-- Android 10+ connection path uses `WifiNetworkSpecifier` request flow (ephemeral request semantics may vary by OEM policy).
-- Internet reachability checks test multiple endpoints and are transport-specific where possible.
-- UI state distinctions are preserved:
-  - selected/not connected
-  - connecting
-  - connected with internet
-  - connected without internet
-  - connection error
+- Put values in `~/.gradle/gradle.properties` or project `gradle.properties`, or pass via CI/CLI `-P...`.
+- Supported Gradle properties:
+  - `somers.activationEndpoint`
+  - `somers.activationTimeoutMs`
+  - `somers.targetAppPackage`
+  - `somers.targetAppActivity`
 
-## Logging strategy
+Example CLI override:
 
-Audit logs remain JSONL and are written to:
-- Primary: `<app external files>/audit/launcher_audit.jsonl`
-- Fallback: `<app internal files>/audit/launcher_audit.jsonl`
+```bash
+./gradlew assembleDebug \
+  -Psomers.activationEndpoint=https://activation.example.com/api/v1/activate \
+  -Psomers.activationTimeoutMs=20000 \
+  -Psomers.targetAppPackage=com.example.target \
+  -Psomers.targetAppActivity=com.example.target.MainActivity
+```
 
-Rotation:
-- current log rotates at ~1 MB to `launcher_audit.prev.jsonl`.
+(CI can pass the same `-P` keys; local defaults remain in `app/build.gradle.kts`.)
 
-Storage visibility still depends on device policy and Android scoped-storage behavior.
+## Manual verification (real flow)
 
-## Manual validation checklist (real devices)
+1. Install launcher with a reachable activation endpoint.
+2. Launch app with clean app data.
+3. Complete onboarding and network step (Wi-Fi or mobile skip).
+4. Confirm activation request reaches backend and returns valid JSON contract.
+   - Transport semantics: request is `POST` with explicit JSON headers and an intentionally empty body.
+5. On success:
+   - launcher persists activation state,
+   - handoff is attempted to configured target app (config-only target policy),
+   - launcher enters pass-through mode and remains installed as fallback launcher entrypoint.
+6. Force close launcher and open again: onboarding must **not** reappear.
+7. Failure checks:
+   - API business failure (`success=false`) shows localized activation failure.
+   - Transport failure / timeout / malformed response each show localized failure text.
+   - `activated=true` must remain unset after failures.
 
-### ANFU
-- Verify vendor detection resolves to `ANFU`.
-- Verify Wi-Fi scan/list/connect flow with secure and open AP.
-- Verify activation screen keeps display awake.
-- Verify attempted controlled-mode logs and TODO result details.
-- Verify target app launch by package and explicit activity failure handling.
+## Explicitly deferred
 
-### NewPOS
-- Verify vendor detection resolves to `NEWPOS`.
-- Validate network scan/connect and internet reachability transitions.
-- Validate back button remains in launcher flow during onboarding.
-- Verify vendor action logs indicate deferred SDK hooks.
-
-### Newland
-- Verify vendor detection resolves to `NEWLAND`.
-- Validate onboarding gate behavior (`activated=false` enters onboarding, `activated=true` pass-through).
-- Validate mobile-skip enablement only when mobile internet check is true.
-- Verify handoff success/failure events are logged.
-
-## Deferred to PR-3
-
-- Final activation-agent API integration and business response parsing.
-- Final post-activation launcher disable flow that depends on activation-agent result contract.
-- Vendor SDK deep integrations for full kiosk/hard lock behavior.
-- Full production rollout/release hardening and branding assets.
+- OEM-specific launcher disable/hard kiosk behavior remains deferred because safe/portable behavior is vendor/policy dependent.
+- No fake vendor SDK hooks were added; deferred paths continue to log explicit deferred status.

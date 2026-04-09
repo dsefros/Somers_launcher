@@ -73,9 +73,9 @@ class MockActivationClient(private val shouldSucceed: Boolean = true) : Activati
     override suspend fun activate(): ActivationResult {
         delay(2500)
         return if (shouldSucceed) {
-            ActivationResult(true, "200", "MOCK_ACTIVATED", "com.somers.target")
+            ActivationResult(true, "200", "MOCK_ACTIVATED")
         } else {
-            ActivationResult(false, "503", "MOCK_TEMPORARY_FAILURE", null)
+            ActivationResult(false, "503", "MOCK_TEMPORARY_FAILURE")
         }
     }
 }
