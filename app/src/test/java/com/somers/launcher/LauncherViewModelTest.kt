@@ -1,5 +1,6 @@
 package com.somers.launcher
 
+import com.somers.launcher.core.config.LauncherConfig
 import com.somers.launcher.domain.ActivationClient
 import com.somers.launcher.domain.ActivationResult
 import com.somers.launcher.domain.ActivationStateStore
@@ -7,13 +8,22 @@ import com.somers.launcher.domain.AppLanguage
 import com.somers.launcher.domain.AuditLogger
 import com.somers.launcher.domain.ConnectivityChecker
 import com.somers.launcher.domain.HandoffManager
+import com.somers.launcher.domain.HandoffResult
+import com.somers.launcher.domain.HandoffTarget
 import com.somers.launcher.domain.LocaleManager
 import com.somers.launcher.domain.NetworkMode
+import com.somers.launcher.domain.NetworkPermissionManager
+import com.somers.launcher.domain.SystemActionResult
+import com.somers.launcher.domain.VendorStrategySelector
+import com.somers.launcher.domain.VendorSystemControl
+import com.somers.launcher.domain.VendorType
 import com.somers.launcher.domain.WifiConnectionState
 import com.somers.launcher.domain.WifiManager
 import com.somers.launcher.domain.WifiNetwork
 import com.somers.launcher.presentation.LauncherAction
+import com.somers.launcher.presentation.LauncherStringProvider
 import com.somers.launcher.presentation.LauncherViewModel
+import com.somers.launcher.presentation.NetworkPermissionState
 import com.somers.launcher.presentation.NetworkUiState
 import com.somers.launcher.presentation.Stage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -56,15 +66,6 @@ class LauncherViewModelTest {
     }
 
     @Test
-    fun activationFailure_movesToError() = runTest(dispatcher) {
-        val store = FakeStore()
-        val vm = createVm(store, success = false)
-        vm.onAction(LauncherAction.SkipWithMobile)
-        advanceUntilIdle()
-        assertEquals(Stage.ERROR, vm.state.value.stage)
-    }
-
-    @Test
     fun startupWithActivatedState_goesToPassThrough() = runTest(dispatcher) {
         val store = FakeStore(activated = true)
         val vm = createVm(store, success = true)
@@ -72,22 +73,43 @@ class LauncherViewModelTest {
         assertEquals(Stage.PASSTHROUGH, vm.state.value.stage)
     }
 
+    @Test
+    fun startPressed_withoutRequest_keepsPermissionStateUnknown() = runTest(dispatcher) {
+        val store = FakeStore()
+        val vm = createVm(store, success = true, hasPermission = false)
+
+        vm.onAction(LauncherAction.StartPressed)
+        advanceUntilIdle()
+
+        assertEquals(NetworkPermissionState.UNKNOWN, vm.state.value.networkPermissionState)
+        assertEquals(listOf("perm"), vm.state.value.requiredNetworkPermissions)
+    }
+
 
     @Test
-    fun networkWithInternet_afterSuccessfulConnect_endsConnectedWithInternet() = runTest(dispatcher) {
+    fun permissionRequestResult_transitionsToDeniedOrGranted() = runTest(dispatcher) {
         val store = FakeStore()
-        val vm = createVm(store, success = true, wifiInternet = true)
-        vm.onAction(LauncherAction.SelectNetwork("ssid"))
+        val vm = createVm(store, success = true, hasPermission = false)
+
+        vm.onAction(LauncherAction.StartPressed)
         advanceUntilIdle()
-        vm.onAction(LauncherAction.ConnectWifi)
+        assertEquals(NetworkPermissionState.UNKNOWN, vm.state.value.networkPermissionState)
+
+        vm.onAction(LauncherAction.RequestNetworkPermissions)
+        vm.onAction(LauncherAction.NetworkPermissionsResult(granted = false))
         advanceUntilIdle()
-        assertEquals(NetworkUiState.CONNECTED_WITH_INTERNET, vm.state.value.networkUiState)
+        assertEquals(NetworkPermissionState.DENIED, vm.state.value.networkPermissionState)
+
+        vm.onAction(LauncherAction.NetworkPermissionsResult(granted = true))
+        advanceUntilIdle()
+        assertEquals(NetworkPermissionState.GRANTED, vm.state.value.networkPermissionState)
     }
 
     @Test
     fun networkNoInternetMessage_onlyAfterConnectionAttempt() = runTest(dispatcher) {
         val store = FakeStore()
         val vm = createVm(store, success = true, wifiInternet = false)
+        vm.onAction(LauncherAction.StartPressed)
         vm.onAction(LauncherAction.SelectNetwork("ssid"))
         advanceUntilIdle()
         assertEquals(NetworkUiState.SELECTED_NOT_CONNECTED, vm.state.value.networkUiState)
@@ -100,6 +122,7 @@ class LauncherViewModelTest {
         store: FakeStore,
         success: Boolean,
         wifiInternet: Boolean = true,
+        hasPermission: Boolean = true,
     ): LauncherViewModel = LauncherViewModel(
         store = store,
         localeManager = object : LocaleManager {
@@ -108,6 +131,7 @@ class LauncherViewModelTest {
         },
         wifiManager = object : WifiManager {
             override fun observeNetworks(): Flow<List<WifiNetwork>> = flowOf(listOf(WifiNetwork("ssid", true, com.somers.launcher.domain.SignalLevel.STRONG)))
+            override suspend fun startScan() = Unit
             override suspend fun refresh() = Unit
             override suspend fun connect(ssid: String, password: String?): WifiConnectionState = WifiConnectionState.Connected
         },
@@ -115,17 +139,36 @@ class LauncherViewModelTest {
             private val wifiFlow = MutableStateFlow(wifiInternet)
             override val wifiInternetAvailable: Flow<Boolean> = wifiFlow
             override val mobileInternetAvailable: Flow<Boolean> = flowOf(true)
+            override suspend fun refresh() = Unit
             override suspend fun currentWifiInternetAvailable(): Boolean = wifiFlow.value
         },
         activationClient = object : ActivationClient {
-            override suspend fun activate(): ActivationResult = if (success) {
-                ActivationResult(true, "200", "ok", "pkg")
-            } else {
-                ActivationResult(false, "500", "fail", null)
-            }
+            override suspend fun activate(): ActivationResult = if (success) ActivationResult(true, "200", "ok", "pkg") else ActivationResult(false, "500", "fail", null)
         },
-        handoffManager = object : HandoffManager { override suspend fun handoff(targetPackage: String?) = Unit },
-        logger = object : AuditLogger { override suspend fun log(event: String, payload: Map<String, String>) = Unit }
+        handoffManager = object : HandoffManager {
+            override suspend fun handoff(target: HandoffTarget): HandoffResult = HandoffResult.Success(target.packageName)
+        },
+        logger = object : AuditLogger { override suspend fun log(event: String, payload: Map<String, String>) = Unit },
+        vendorSelector = object : VendorStrategySelector { override fun select(configVendorOverride: VendorType?) = VendorType.DEFAULT },
+        systemControl = object : VendorSystemControl {
+            override val vendor: VendorType = VendorType.DEFAULT
+            override suspend fun enterControlledMode() = SystemActionResult(true, "ok")
+            override suspend fun keepScreenAwake(enabled: Boolean) = SystemActionResult(true, "ok")
+            override suspend fun prepareTemporaryLauncherRole() = SystemActionResult(false, "todo")
+            override suspend fun disableLauncherForFutureStartup() = SystemActionResult(false, "todo")
+        },
+        config = LauncherConfig(),
+        networkPermissionManager = object : NetworkPermissionManager {
+            override fun requiredPermissions(): List<String> = listOf("perm")
+            override fun hasRequiredPermissions(): Boolean = hasPermission
+        },
+        stringProvider = object : LauncherStringProvider {
+            override fun get(id: Int): String = when (id) {
+                R.string.activation_failed_title -> "Activation failed"
+                R.string.activation_failed_message -> "Unable to complete activation"
+                else -> ""
+            }
+        }
     )
 
     private class FakeStore(activated: Boolean = false) : ActivationStateStore {

@@ -1,86 +1,79 @@
-# Somers Launcher (PR-1 merge-ready skeleton)
+# Somers Launcher (PR-2 device integration layer)
 
-## What this PR-1 implements
+## What PR-2 makes real
 
-This repository provides the **PR-1 foundation** for a preinstalled Android POS launcher onboarding flow.
+This PR extends the merged PR-1 skeleton with real Android device-side integration points while keeping activation-agent business contract integration deferred to PR-3.
 
-Implemented stack:
-- Kotlin + Jetpack Compose, single-activity app.
-- Layered structure:
-  - `ui` (screens)
-  - `presentation` (state/actions/viewmodel orchestration)
-  - `domain` (models/interfaces)
-  - `data` (DataStore + mocks)
-  - `core/logging` (audit logger)
+Implemented in PR-2:
+- Vendor-aware strategy layer for ANFU / NewPOS / Newland with explicit fallback and TODO-safe adapters.
+- Real Android Wi-Fi scan/connect integration (`WifiManager`, `ConnectivityManager`) behind domain ports.
+- Real internet reachability checks for Wi-Fi and mobile transports using multiple public endpoints.
+- Controlled launcher behavior primitives:
+  - portrait-only activity
+  - in-app back routing for onboarding
+  - keep-screen-awake during activation stage
+  - temporary launcher-role extension points (prepared, partially deferred)
+- Real app handoff primitive by package / explicit activity with structured failure mapping.
+- Hardened JSONL audit logging with file rotation.
+- Config object for target app, reachability endpoints, vendor override, and feature flags.
 
-## Flow implemented (mock end-to-end)
+## Vendor abstraction structure
 
-Startup gate checks persisted activation state:
-- `activated=false` -> onboarding flow
-- `activated=true` -> pass-through already-activated placeholder
+- `domain/Ports.kt`: core interfaces (`VendorSystemControl`, `VendorStrategySelector`, `WifiManager`, `ConnectivityChecker`, `HandoffManager`).
+- `data/vendor/BuildVendorStrategySelector.kt`: runtime vendor resolution from build fingerprint (or config override).
+- `data/vendor/VendorSystemControls.kt`: default + ANFU + NewPOS + Newland adapters.
 
-Onboarding stages:
-1. Welcome
-2. Language selection
-3. Network setup (mock Wi-Fi UX)
-4. Activation in progress (fake rotating statuses)
-5. Completed (then optional pass-through transition)
-6. Error screen (for activation or connection failures)
+> Important: vendor SDK-specific method calls are intentionally not faked. Unknown SDK paths are marked as TODO and return explicit non-success `SystemActionResult` values.
 
-Back behavior stays in-app and routes to previous logical stage.
+## Real network behavior notes
 
-## Persistence
+- Wi-Fi scanning/connection uses platform APIs and respects platform permission/policy constraints.
+- Android 13+ requires runtime `NEARBY_WIFI_DEVICES`; Android 12 and below use runtime `ACCESS_FINE_LOCATION` for scan/connect discovery behavior.
+- Before requesting runtime permission, the network step remains in an explicit not-yet-requested state; after denial it shows a permission-required state (not a misleading empty network list).
+- Android 10+ connection path uses `WifiNetworkSpecifier` request flow (ephemeral request semantics may vary by OEM policy).
+- Internet reachability checks test multiple endpoints and are transport-specific where possible.
+- UI state distinctions are preserved:
+  - selected/not connected
+  - connecting
+  - connected with internet
+  - connected without internet
+  - connection error
 
-DataStore file: `launcher_state.preferences_pb`
+## Logging strategy
 
-Stored keys:
-- `activated: Boolean`
-- `language: String` (app locale code)
-- `network_mode: WIFI | MOBILE`
+Audit logs remain JSONL and are written to:
+- Primary: `<app external files>/audit/launcher_audit.jsonl`
+- Fallback: `<app internal files>/audit/launcher_audit.jsonl`
 
-Language fallback defaults to Russian when stored value is absent/invalid.
+Rotation:
+- current log rotates at ~1 MB to `launcher_audit.prev.jsonl`.
 
-## Locale handling
+Storage visibility still depends on device policy and Android scoped-storage behavior.
 
-PR-1 now uses Android string resources for app UI text, with per-locale `strings.xml` files.
-Russian is intentionally provided via default `values/strings.xml` (Android standard fallback), not a separate `values-ru/`.
+## Manual validation checklist (real devices)
 
-Supported launcher locales:
-- Russian (`ru`) — default/fallback
-- English (`en`)
-- Tajik (`tg`)
-- Kyrgyz (`ky`)
-- Armenian (`hy`)
-- Uzbek (`uz`)
+### ANFU
+- Verify vendor detection resolves to `ANFU`.
+- Verify Wi-Fi scan/list/connect flow with secure and open AP.
+- Verify activation screen keeps display awake.
+- Verify attempted controlled-mode logs and TODO result details.
+- Verify target app launch by package and explicit activity failure handling.
 
-Runtime app-locale switching is applied through `AppCompatDelegate.setApplicationLocales(...)`.
-System locale changes remain out of scope.
+### NewPOS
+- Verify vendor detection resolves to `NEWPOS`.
+- Validate network scan/connect and internet reachability transitions.
+- Validate back button remains in launcher flow during onboarding.
+- Verify vendor action logs indicate deferred SDK hooks.
 
-## Mocked services in PR-1
+### Newland
+- Verify vendor detection resolves to `NEWLAND`.
+- Validate onboarding gate behavior (`activated=false` enters onboarding, `activated=true` pass-through).
+- Validate mobile-skip enablement only when mobile internet check is true.
+- Verify handoff success/failure events are logged.
 
-- `MockWifiManager` (network list/refresh/connect states)
-- `MockConnectivityChecker` (wifi/mobile internet availability)
-- `MockActivationClient` (deterministic success/failure)
-- `MockHandoffManager` (handoff attempt stub)
+## Deferred to PR-3
 
-No vendor SDK integration in this PR.
-
-## Audit logging
-
-JSONL audit log target:
-- Primary: app-specific external files directory: `<external-files>/audit/launcher_audit.jsonl`
-- Fallback: internal app files directory: `<internal-files>/audit/launcher_audit.jsonl`
-
-Important operational note:
-- App-specific external storage is usually retrievable via USB/ADB/device service tooling.
-- Visibility in consumer file-manager apps may vary by device policy and Android storage restrictions.
-
-## Deferred intentionally (PR-2 / PR-3)
-
-- Vendor SDK integration (ANFU/NewPOS/Newland)
-- Real Wi-Fi scan/connect and SIM/mobile detection
-- Real activation-agent API integration
-- Boot receiver/default launcher/kiosk HOME enforcement
-- Real post-activation launcher disabling
-- Real target app launch/autostart policy integration
-- Final branding/animations assets
+- Final activation-agent API integration and business response parsing.
+- Final post-activation launcher disable flow that depends on activation-agent result contract.
+- Vendor SDK deep integrations for full kiosk/hard lock behavior.
+- Full production rollout/release hardening and branding assets.

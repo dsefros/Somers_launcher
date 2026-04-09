@@ -4,23 +4,32 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.somers.launcher.core.config.LauncherConfig
+import com.somers.launcher.core.config.LauncherConfigProvider
 import com.somers.launcher.core.logging.JsonFileAuditLogger
 import com.somers.launcher.data.AppDataStore
 import com.somers.launcher.data.AppLocaleManager
 import com.somers.launcher.data.MockActivationClient
-import com.somers.launcher.data.MockConnectivityChecker
-import com.somers.launcher.data.MockHandoffManager
-import com.somers.launcher.data.MockWifiManager
+import com.somers.launcher.data.device.AndroidConnectivityChecker
+import com.somers.launcher.data.device.AndroidHandoffManager
+import com.somers.launcher.data.device.AndroidNetworkPermissionManager
+import com.somers.launcher.data.device.AndroidWifiManager
+import com.somers.launcher.data.vendor.BuildVendorStrategySelector
+import com.somers.launcher.data.vendor.VendorSystemControlFactory
 import com.somers.launcher.domain.ActivationClient
 import com.somers.launcher.domain.ActivationStateStore
 import com.somers.launcher.domain.AuditLogger
 import com.somers.launcher.domain.ConnectivityChecker
-import com.somers.launcher.domain.ErrorDetails
 import com.somers.launcher.domain.FlowCoordinator
 import com.somers.launcher.domain.HandoffManager
+import com.somers.launcher.domain.HandoffResult
 import com.somers.launcher.domain.LocaleManager
+import com.somers.launcher.domain.NetworkPermissionManager
 import com.somers.launcher.domain.NetworkMode
+import com.somers.launcher.domain.StartupGate
 import com.somers.launcher.domain.StatusRotator
+import com.somers.launcher.domain.VendorStrategySelector
+import com.somers.launcher.domain.VendorSystemControl
 import com.somers.launcher.domain.WifiConnectionState
 import com.somers.launcher.domain.WifiManager
 import kotlinx.coroutines.Job
@@ -39,6 +48,11 @@ class LauncherViewModel(
     private val activationClient: ActivationClient,
     private val handoffManager: HandoffManager,
     private val logger: AuditLogger,
+    private val vendorSelector: VendorStrategySelector,
+    private val systemControl: VendorSystemControl,
+    private val config: LauncherConfig,
+    private val networkPermissionManager: NetworkPermissionManager,
+    private val stringProvider: LauncherStringProvider,
     private val coordinator: FlowCoordinator = FlowCoordinator(),
 ) : ViewModel() {
     private val _state = MutableStateFlow(LauncherState())
@@ -55,11 +69,20 @@ class LauncherViewModel(
 
     init {
         viewModelScope.launch {
+            val vendor = vendorSelector.select(config.vendorOverride)
+            _state.value = _state.value.copy(selectedVendor = vendor)
             logger.log("launcher_start")
+            logger.log("vendor_strategy_selected", mapOf("vendor" to vendor.name, "control_impl" to systemControl.vendor.name))
+            logger.log("launcher_target_configured", mapOf("package" to config.targetApp.packageName, "activity" to (config.targetApp.activityName ?: "")))
+
+            if (config.enableVendorControlledMode) {
+                val controlResult = systemControl.enterControlledMode()
+                logger.log("system_control_enter_attempt", mapOf("success" to controlResult.success.toString(), "details" to controlResult.details))
+            }
+
             store.activatedFlow.collectLatest { activated ->
-                val current = _state.value.stage
-                if (current == Stage.STARTUP_GATE) {
-                    changeStage(if (activated) Stage.PASSTHROUGH else Stage.WELCOME)
+                if (_state.value.stage == Stage.STARTUP_GATE) {
+                    changeStage(StartupGate.initialStage(activated))
                 }
             }
         }
@@ -70,26 +93,44 @@ class LauncherViewModel(
             }
         }
         viewModelScope.launch {
-            wifiManager.observeNetworks().collectLatest { _state.value = _state.value.copy(networks = it) }
+            wifiManager.observeNetworks().collectLatest {
+                _state.value = _state.value.copy(networks = it)
+                logger.log("wifi_scan_result", mapOf("count" to it.size.toString()))
+            }
         }
         viewModelScope.launch {
             connectivityChecker.wifiInternetAvailable.collectLatest { available ->
                 _state.value = _state.value.copy(wifiInternetAvailable = available)
                 updateNetworkUiStateAfterConnectivityChange()
+                logger.log("internet_reachability_result", mapOf("wifi_internet" to available.toString()))
             }
         }
         viewModelScope.launch {
-            connectivityChecker.mobileInternetAvailable.collectLatest { _state.value = _state.value.copy(mobileInternetAvailable = it) }
+            connectivityChecker.mobileInternetAvailable.collectLatest {
+                _state.value = _state.value.copy(mobileInternetAvailable = it)
+                logger.log("mobile_internet_availability", mapOf("available" to it.toString()))
+            }
         }
     }
 
     fun onAction(action: LauncherAction) {
         when (action) {
             LauncherAction.OpenLanguageSelection,
-            LauncherAction.StartPressed,
             LauncherAction.BackPressed,
             LauncherAction.ReturnToWelcome,
             LauncherAction.OpenPassThrough -> changeStage(coordinator.next(_state.value, action))
+
+            LauncherAction.StartPressed -> {
+                changeStage(coordinator.next(_state.value, action))
+                preparePermissionStateForNetworkStep()
+                if (_state.value.networkPermissionState == NetworkPermissionState.GRANTED) {
+                    viewModelScope.launch {
+                        logger.log("wifi_scan_start")
+                        wifiManager.startScan()
+                        connectivityChecker.refresh()
+                    }
+                }
+            }
 
             is LauncherAction.SelectLanguage -> viewModelScope.launch {
                 localeManager.setLanguage(action.language)
@@ -107,8 +148,32 @@ class LauncherViewModel(
 
             is LauncherAction.UpdatePassword -> _state.value = _state.value.copy(wifiPassword = action.value)
             LauncherAction.RefreshNetworks -> viewModelScope.launch {
-                logger.log("network_refresh")
+                if (_state.value.networkPermissionState != NetworkPermissionState.GRANTED) {
+                    logger.log("wifi_scan_result", mapOf("result" to "permission_denied"))
+                    return@launch
+                }
+                logger.log("wifi_scan_start")
                 wifiManager.refresh()
+                connectivityChecker.refresh()
+            }
+
+            LauncherAction.RequestNetworkPermissions -> {
+                _state.value = _state.value.copy(requiredNetworkPermissions = networkPermissionManager.requiredPermissions(), shouldRequestNetworkPermission = true)
+            }
+
+            is LauncherAction.NetworkPermissionsResult -> {
+                _state.value = _state.value.copy(
+                    networkPermissionState = if (action.granted) NetworkPermissionState.GRANTED else NetworkPermissionState.DENIED,
+                    shouldRequestNetworkPermission = false
+                )
+                viewModelScope.launch {
+                    logger.log("network_permission_result", mapOf("granted" to action.granted.toString()))
+                    if (action.granted) {
+                        logger.log("wifi_scan_start")
+                        wifiManager.startScan()
+                        connectivityChecker.refresh()
+                    }
+                }
             }
 
             LauncherAction.ConnectWifi -> connectWifi()
@@ -126,16 +191,13 @@ class LauncherViewModel(
 
     private fun updateNetworkUiStateAfterConnectivityChange() {
         val state = _state.value
-        if (state.networkUiState == NetworkUiState.CONNECTING) return
-        if (state.networkUiState == NetworkUiState.CONNECTION_ERROR) return
+        if (state.networkUiState == NetworkUiState.CONNECTING || state.networkUiState == NetworkUiState.CONNECTION_ERROR) return
         if (state.selectedNetworkSsid == null) return
 
         _state.value = _state.value.copy(
             networkUiState = if (state.wifiInternetAvailable) {
                 NetworkUiState.CONNECTED_WITH_INTERNET
-            } else if (state.networkUiState == NetworkUiState.CONNECTED_WITH_INTERNET ||
-                state.networkUiState == NetworkUiState.CONNECTED_NO_INTERNET
-            ) {
+            } else if (state.networkUiState == NetworkUiState.CONNECTED_WITH_INTERNET || state.networkUiState == NetworkUiState.CONNECTED_NO_INTERNET) {
                 NetworkUiState.CONNECTED_NO_INTERNET
             } else {
                 state.networkUiState
@@ -144,23 +206,22 @@ class LauncherViewModel(
     }
 
     private fun connectWifi() = viewModelScope.launch {
+        if (_state.value.networkPermissionState != NetworkPermissionState.GRANTED) {
+            logger.log("wifi_connect_result", mapOf("result" to "permission_denied"))
+            return@launch
+        }
         val ssid = _state.value.selectedNetworkSsid ?: return@launch
         _state.value = _state.value.copy(networkUiState = NetworkUiState.CONNECTING)
-        logger.log("wifi_connect_started", mapOf("ssid" to ssid))
+        logger.log("wifi_connect_attempt", mapOf("ssid" to ssid))
 
         when (val result = wifiManager.connect(ssid, _state.value.wifiPassword)) {
             WifiConnectionState.Connected -> {
-                (connectivityChecker as? MockConnectivityChecker)?.setWifiInternet(ssid != "Warehouse-AP")
+                connectivityChecker.refresh()
                 val hasInternet = connectivityChecker.currentWifiInternetAvailable()
                 _state.value = _state.value.copy(
-                    networkUiState = if (hasInternet) {
-                        NetworkUiState.CONNECTED_WITH_INTERNET
-                    } else {
-                        NetworkUiState.CONNECTED_NO_INTERNET
-                    }
+                    networkUiState = if (hasInternet) NetworkUiState.CONNECTED_WITH_INTERNET else NetworkUiState.CONNECTED_NO_INTERNET
                 )
-                logger.log("connectivity_result", mapOf("wifi_internet" to hasInternet.toString()))
-                logger.log("wifi_connect_result", mapOf("ssid" to ssid, "result" to "connected"))
+                logger.log("wifi_connect_result", mapOf("ssid" to ssid, "result" to "connected", "internet" to hasInternet.toString()))
             }
 
             is WifiConnectionState.Error -> {
@@ -174,6 +235,12 @@ class LauncherViewModel(
 
     private fun startActivation() {
         changeStage(Stage.ACTIVATION)
+        _state.value = _state.value.copy(keepScreenAwake = true)
+        viewModelScope.launch {
+            val action = systemControl.keepScreenAwake(true)
+            logger.log("system_control_keep_awake", mapOf("enabled" to "true", "success" to action.success.toString(), "details" to action.details))
+        }
+
         statusJob?.cancel()
         statusJob = viewModelScope.launch {
             var idx = 0
@@ -187,27 +254,40 @@ class LauncherViewModel(
         viewModelScope.launch {
             logger.log("activation_started")
             val result = activationClient.activate()
-            logger.log(
-                "activation_result",
-                mapOf(
-                    "code" to result.responseCode,
-                    "message" to result.responseMessage,
-                    "success" to result.success.toString()
-                )
-            )
+            logger.log("activation_result", mapOf("code" to result.responseCode, "message" to result.responseMessage, "success" to result.success.toString()))
             statusJob?.cancel()
+            _state.value = _state.value.copy(keepScreenAwake = false)
+            val keepAwakeOff = systemControl.keepScreenAwake(false)
+            logger.log("system_control_keep_awake", mapOf("enabled" to "false", "success" to keepAwakeOff.success.toString(), "details" to keepAwakeOff.details))
+
             if (result.success) {
                 changeStage(Stage.COMPLETED)
                 store.setActivated(true)
-                handoffManager.handoff(result.targetPackage)
-                logger.log("handoff_attempted", mapOf("target" to (result.targetPackage ?: "none")))
+                val handoff = handoffManager.handoff(config.targetApp)
+                when (handoff) {
+                    is HandoffResult.Success -> logger.log("handoff_result", mapOf("result" to "success", "component" to handoff.launchedComponent))
+                    is HandoffResult.Failure -> logger.log("handoff_result", mapOf("result" to "failure", "reason" to handoff.reason.name, "details" to handoff.details))
+                }
             } else {
                 _state.value = _state.value.copy(
                     stage = Stage.ERROR,
-                    error = ErrorDetails(title = "Activation failed", message = result.responseMessage, code = result.responseCode)
+                    error = UiMappers.activationFailureError(stringProvider, result.responseCode)
                 )
                 logger.log("error_shown", mapOf("code" to result.responseCode))
             }
+        }
+    }
+
+
+    private fun preparePermissionStateForNetworkStep() {
+        val granted = networkPermissionManager.hasRequiredPermissions()
+        _state.value = _state.value.copy(
+            networkPermissionState = if (granted) NetworkPermissionState.GRANTED else NetworkPermissionState.UNKNOWN,
+            requiredNetworkPermissions = networkPermissionManager.requiredPermissions(),
+            shouldRequestNetworkPermission = false
+        )
+        viewModelScope.launch {
+            logger.log("network_permission_state", mapOf("granted" to granted.toString(), "requested" to "false"))
         }
     }
 
@@ -220,15 +300,24 @@ class LauncherViewModel(
         fun factory(context: Context): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 val store = AppDataStore(context)
+                val config = LauncherConfigProvider.default()
+                val vendorSelector = BuildVendorStrategySelector()
+                val vendorControl = VendorSystemControlFactory().create(vendorSelector.select(config.vendorOverride))
+
                 @Suppress("UNCHECKED_CAST")
                 return LauncherViewModel(
                     store = store,
                     localeManager = AppLocaleManager(store),
-                    wifiManager = MockWifiManager(),
-                    connectivityChecker = MockConnectivityChecker(),
+                    wifiManager = AndroidWifiManager(context),
+                    connectivityChecker = AndroidConnectivityChecker(context, config.reachabilityEndpoints),
                     activationClient = MockActivationClient(shouldSucceed = true),
-                    handoffManager = MockHandoffManager(),
-                    logger = JsonFileAuditLogger(context)
+                    handoffManager = AndroidHandoffManager(context),
+                    logger = JsonFileAuditLogger(context),
+                    vendorSelector = vendorSelector,
+                    systemControl = vendorControl,
+                    config = config,
+                    networkPermissionManager = AndroidNetworkPermissionManager(context),
+                    stringProvider = AndroidLauncherStringProvider(context),
                 ) as T
             }
         }

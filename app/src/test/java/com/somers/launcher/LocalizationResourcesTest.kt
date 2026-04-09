@@ -37,7 +37,14 @@ class LocalizationResourcesTest {
         "security_lock",
         "activation_status_checking_configuration",
         "activation_status_preparing",
-        "activation_status_syncing_profile"
+        "activation_status_syncing_profile",
+        "activation_failed_title",
+        "activation_failed_message",
+        "network_permission_required",
+        "grant_permission",
+        "signal_weak",
+        "signal_medium",
+        "signal_strong"
     )
 
     @Test

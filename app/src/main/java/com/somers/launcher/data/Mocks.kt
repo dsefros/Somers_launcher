@@ -4,6 +4,8 @@ import com.somers.launcher.domain.ActivationClient
 import com.somers.launcher.domain.ActivationResult
 import com.somers.launcher.domain.ConnectivityChecker
 import com.somers.launcher.domain.HandoffManager
+import com.somers.launcher.domain.HandoffResult
+import com.somers.launcher.domain.HandoffTarget
 import com.somers.launcher.domain.SignalLevel
 import com.somers.launcher.domain.WifiConnectionState
 import com.somers.launcher.domain.WifiManager
@@ -23,6 +25,8 @@ class MockWifiManager : WifiManager {
     )
 
     override fun observeNetworks(): Flow<List<WifiNetwork>> = networks.asStateFlow()
+
+    override suspend fun startScan() = refresh()
 
     override suspend fun refresh() {
         delay(300)
@@ -53,6 +57,7 @@ class MockConnectivityChecker : ConnectivityChecker {
     override val wifiInternetAvailable: Flow<Boolean> = wifi.asStateFlow()
     override val mobileInternetAvailable: Flow<Boolean> = mobile.asStateFlow()
 
+    override suspend fun refresh() = Unit
     override suspend fun currentWifiInternetAvailable(): Boolean = wifi.value
 
     fun setWifiInternet(value: Boolean) {
@@ -76,8 +81,9 @@ class MockActivationClient(private val shouldSucceed: Boolean = true) : Activati
 }
 
 class MockHandoffManager : HandoffManager {
-    var attemptedTarget: String? = null
-    override suspend fun handoff(targetPackage: String?) {
-        attemptedTarget = targetPackage
+    var attemptedTarget: HandoffTarget? = null
+    override suspend fun handoff(target: HandoffTarget): HandoffResult {
+        attemptedTarget = target
+        return HandoffResult.Success(target.packageName)
     }
 }

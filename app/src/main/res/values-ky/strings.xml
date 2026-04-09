@@ -31,4 +31,11 @@
     <string name="activation_status_checking_configuration">Конфигурация текшерилүүдө</string>
     <string name="activation_status_preparing">Активдештирүү даярдалууда</string>
     <string name="activation_status_syncing_profile">Түзмөктүн профили шайкештешүүдө</string>
+    <string name="activation_failed_title">Жандандыруу катасы</string>
+    <string name="activation_failed_message">Жандандыруу аяктаган жок. Сураныч, кайра аракет кылыңыз.</string>
+    <string name="network_permission_required">Wi‑Fi тармактарын издөө жана туташуу үчүн уруксат керек.</string>
+    <string name="grant_permission">Уруксат берүү</string>
+    <string name="signal_weak">Алсыз</string>
+    <string name="signal_medium">Орточо</string>
+    <string name="signal_strong">Күчтүү</string>
 </resources>

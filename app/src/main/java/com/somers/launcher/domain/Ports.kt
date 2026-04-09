@@ -18,6 +18,7 @@ interface LocaleManager {
 
 interface WifiManager {
     fun observeNetworks(): Flow<List<WifiNetwork>>
+    suspend fun startScan()
     suspend fun refresh()
     suspend fun connect(ssid: String, password: String?): WifiConnectionState
 }
@@ -25,21 +26,65 @@ interface WifiManager {
 interface ConnectivityChecker {
     val wifiInternetAvailable: Flow<Boolean>
     val mobileInternetAvailable: Flow<Boolean>
+    suspend fun refresh()
     suspend fun currentWifiInternetAvailable(): Boolean
 }
 
+
+interface NetworkPermissionManager {
+    fun requiredPermissions(): List<String>
+    fun hasRequiredPermissions(): Boolean
+}
 interface ActivationClient {
     suspend fun activate(): ActivationResult
 }
 
 interface HandoffManager {
-    suspend fun handoff(targetPackage: String?)
+    suspend fun handoff(target: HandoffTarget): HandoffResult
 }
 
 interface AuditLogger {
     suspend fun log(event: String, payload: Map<String, String> = emptyMap())
 }
 
-interface SystemControlManager {
-    suspend fun disableLauncherForFutureStartup()
+interface VendorSystemControl {
+    val vendor: VendorType
+    suspend fun enterControlledMode(): SystemActionResult
+    suspend fun keepScreenAwake(enabled: Boolean): SystemActionResult
+    suspend fun prepareTemporaryLauncherRole(): SystemActionResult
+    suspend fun disableLauncherForFutureStartup(): SystemActionResult
+}
+
+interface VendorStrategySelector {
+    fun select(configVendorOverride: VendorType?): VendorType
+}
+
+enum class VendorType {
+    DEFAULT,
+    ANFU,
+    NEWPOS,
+    NEWLAND
+}
+
+data class SystemActionResult(
+    val success: Boolean,
+    val details: String,
+)
+
+data class HandoffTarget(
+    val packageName: String,
+    val activityName: String? = null,
+)
+
+sealed interface HandoffResult {
+    data class Success(val launchedComponent: String) : HandoffResult
+    data class Failure(val reason: HandoffFailureReason, val details: String) : HandoffResult
+}
+
+enum class HandoffFailureReason {
+    MISSING_PACKAGE,
+    NOT_LAUNCHABLE,
+    ACTIVITY_NOT_FOUND,
+    SECURITY_RESTRICTED,
+    INTERNAL_ERROR
 }
