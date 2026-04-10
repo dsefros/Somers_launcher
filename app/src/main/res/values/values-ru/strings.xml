@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SomersLaunch</string>
+    <string name="welcome">Добро пожаловать!</string>
+    <string name="start">Начать</string>
+    <string name="select_language">Выберите язык</string>
+    <string name="language">Язык</string>
+</resources>
