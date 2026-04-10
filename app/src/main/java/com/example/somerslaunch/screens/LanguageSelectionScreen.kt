@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.somerslaunch.R
-import com.example.somerslaunch.DeviceLanguageController
+import com.example.somerslaunch.DeviceLanguageChangerFactory
 import com.example.somerslaunch.utils.AppSettingsRepository
 import com.example.somerslaunch.utils.LanguageManager
 import com.example.somerslaunch.utils.SystemLanguage
@@ -60,11 +60,14 @@ fun LanguageSelectionScreen(
     val availableLanguages = remember { languageManager.getAvailableLanguages() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val deviceLanguageController = remember { DeviceLanguageController() }
-    val deviceLanguageCapability = remember { deviceLanguageController.getCapability() }
+    val deviceLanguageChanger = remember { DeviceLanguageChangerFactory.create() }
+    val deviceLanguageChangedSuccessMessage = stringResource(R.string.device_language_changed_success)
+    val deviceLanguageRequiresSettingsMessage = stringResource(R.string.device_language_change_requires_settings)
+    val deviceLanguageSettingsOpenFailedMessage = stringResource(R.string.device_language_settings_open_failed)
 
     var selectedLanguage by remember { mutableStateOf(appSettingsRepository.getSelectedLanguage()) }
     var isSaving by remember { mutableStateOf(false) }
+    var deviceLanguageMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -96,18 +99,31 @@ fun LanguageSelectionScreen(
                 }
 
                 item {
+                    val capabilityText = if (deviceLanguageChanger.canChangeDeviceLanguageInApp()) {
+                        stringResource(R.string.device_language_supported_message)
+                    } else {
+                        stringResource(R.string.device_language_not_supported_message)
+                    }
+
                     Text(
-                        text = stringResource(R.string.device_language_not_supported_message),
+                        text = capabilityText,
                         fontSize = 12.sp,
                         color = Color.Gray,
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                     )
 
+                    deviceLanguageMessage?.let {
+                        Text(
+                            text = it,
+                            fontSize = 12.sp,
+                            color = Color(0xFF176FC6),
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+                        )
+                    }
+
                     TextButton(
                         onClick = {
-                            if (!deviceLanguageCapability.canChangeDeviceLanguageInApp) {
-                                deviceLanguageController.openDeviceLanguageSettings(context)
-                            }
+                            deviceLanguageChanger.openDeviceLanguageSettingsFallback(context)
                         },
                         modifier = Modifier.padding(horizontal = 24.dp)
                     ) {
@@ -149,6 +165,17 @@ fun LanguageSelectionScreen(
                             val applied = languageManager.applyLanguage(selectedLanguage)
                             isSaving = false
                             if (saved && applied) {
+                                val systemLanguageChange = deviceLanguageChanger.applyDeviceLanguage(selectedLanguage)
+                                if (systemLanguageChange.isSuccess) {
+                                    deviceLanguageMessage = deviceLanguageChangedSuccessMessage
+                                } else {
+                                    val fallbackOpened = deviceLanguageChanger.openDeviceLanguageSettingsFallback(context)
+                                    deviceLanguageMessage = if (fallbackOpened) {
+                                        deviceLanguageRequiresSettingsMessage
+                                    } else {
+                                        deviceLanguageSettingsOpenFailedMessage
+                                    }
+                                }
                                 onLanguageSaved(selectedLanguage)
                             }
                         }

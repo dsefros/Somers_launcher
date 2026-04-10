@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import android.net.NetworkInfo
 import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager as AndroidWifiManager
+import android.os.Build
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -101,8 +102,20 @@ class WifiManager(private val context: Context) {
         updateState(WifiUiState.Scanning)
         val started = wifiManager.startScan()
         if (!started) {
-            updateState(WifiUiState.Failed("Unable to start Wi-Fi scan"))
+            updateState(WifiUiState.NetworksAvailable(lastScanNetworks, currentConnectedSsid))
         }
+    }
+
+    fun canEnableWifiInApp(): Boolean {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
+    }
+
+    fun enableWifiInApp(): Boolean {
+        if (!canEnableWifiInApp()) return false
+        return runCatching {
+            wifiManager.isWifiEnabled = true
+            true
+        }.getOrElse { false }
     }
 
     suspend fun connectToNetwork(ssid: String, password: String): Boolean {

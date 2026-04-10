@@ -1,7 +1,5 @@
 package com.example.somerslaunch
 
-import android.provider.Settings
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -9,17 +7,18 @@ import org.junit.Test
 class DeviceLanguageControllerTest {
 
     @Test
-    fun capabilityIsExplicitlyNotFeasibleInCurrentAppContext() {
-        val controller = DeviceLanguageController()
-        val capability = controller.getCapability()
-
-        assertFalse(capability.canChangeDeviceLanguageInApp)
-        assertTrue(capability.reason.contains("No device-owner/system-app/platform privileges"))
+    fun defaultFactoryReturnsNonPrivilegedChanger() {
+        val changer = DeviceLanguageChangerFactory.create()
+        assertFalse(changer.canChangeDeviceLanguageInApp())
+        assertTrue(changer.capabilityReason().contains("not configured", ignoreCase = true))
     }
 
     @Test
-    fun fallbackIntentTargetsSystemLocaleSettings() {
-        val controller = DeviceLanguageController()
-        assertEquals(Settings.ACTION_LOCALE_SETTINGS, controller.buildDeviceLanguageSettingsIntent().action)
+    fun posChangerReportsSupportedOnlyWhenRealHookProvided() {
+        val unsupported = PosDeviceLanguageChanger(applyHook = null)
+        assertFalse(unsupported.canChangeDeviceLanguageInApp())
+
+        val supported = PosDeviceLanguageChanger(applyHook = { true })
+        assertTrue(supported.canChangeDeviceLanguageInApp())
     }
 }

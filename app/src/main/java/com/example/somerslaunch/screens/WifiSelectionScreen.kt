@@ -142,6 +142,8 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: (WifiUiSt
     var selectedNetwork by remember { mutableStateOf<WifiNetwork?>(null) }
     var showPasswordDialog by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
+    var connectionError by remember { mutableStateOf<String?>(null) }
+    var isConnecting by remember { mutableStateOf(false) }
 
     fun hasLocationPermission(): Boolean {
         return ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -219,7 +221,14 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: (WifiUiSt
                         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(text = stringResource(R.string.wifi_disabled), modifier = Modifier.weight(1f), color = Color(0xFFFF5722))
                             Button(
-                                onClick = { wifiSettingsLauncher.launch(Intent(Settings.ACTION_WIFI_SETTINGS)) },
+                                onClick = {
+                                    val enabledInApp = wifiManager.enableWifiInApp()
+                                    if (enabledInApp) {
+                                        refreshState()
+                                    } else {
+                                        wifiSettingsLauncher.launch(Intent(Settings.ACTION_WIFI_SETTINGS))
+                                    }
+                                },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5722))
                             ) { Text(stringResource(R.string.enable), color = Color.White) }
                         }
@@ -229,7 +238,11 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: (WifiUiSt
                 is WifiUiState.Scanning,
                 WifiUiState.Idle -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFF176FC6))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = Color(0xFF176FC6))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(text = stringResource(R.string.scan_in_progress), color = Color.Gray)
+                        }
                     }
                 }
 
@@ -272,8 +285,18 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: (WifiUiSt
                             WifiNetworkItem(network = network, isConnected = false) {
                                 selectedNetwork = network
                                 password = ""
+                                connectionError = null
                                 showPasswordDialog = true
                             }
+                        }
+
+                        item {
+                            Text(
+                                text = stringResource(R.string.sim_setup_unavailable),
+                                fontSize = 12.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                            )
                         }
                     }
                 }
@@ -300,7 +323,11 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: (WifiUiSt
                 }
 
                 is WifiUiState.Failed -> {
-                    Text(text = stringResource(R.string.connection_failed, state.reason), modifier = Modifier.padding(24.dp), color = Color.Red)
+                    Text(
+                        text = stringResource(R.string.connection_failed, state.reason),
+                        modifier = Modifier.padding(24.dp),
+                        color = Color.Red
+                    )
                 }
             }
         }
@@ -344,25 +371,49 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: (WifiUiSt
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
+                    if (connectionError != null) {
+                        Text(
+                            text = connectionError!!,
+                            color = Color.Red,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                    if (isConnecting) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        CircularProgressIndicator(color = Color(0xFF176FC6))
+                    }
                 }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         scope.launch {
+                            isConnecting = true
+                            connectionError = null
                             val success = wifiManager.connectToNetwork(selectedNetwork!!.ssid, password)
+                            isConnecting = false
                             if (success) {
                                 showPasswordDialog = false
                                 refreshState()
+                            } else {
+                                connectionError = stringResource(R.string.connection_failed_generic)
                             }
                         }
-                    }
+                    },
+                    enabled = !isConnecting
                 ) {
                     Text(stringResource(R.string.connect))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showPasswordDialog = false }) {
+                TextButton(
+                    onClick = {
+                        showPasswordDialog = false
+                        connectionError = null
+                    },
+                    enabled = !isConnecting
+                ) {
                     Text(stringResource(R.string.cancel))
                 }
             }

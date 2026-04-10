@@ -6,8 +6,12 @@
     <string name="start">Начать</string>
     <string name="select_language">Выберите язык</string>
     <string name="language">Язык</string>
+    <string name="device_language_supported_message">Этот терминал поддерживает смену языка устройства из мастера настройки.</string>
     <string name="device_language_not_supported_message">Приложение может менять только свой язык. Для смены языка всего устройства нужны системные привилегии терминала.</string>
     <string name="open_device_language_settings">Сменить язык устройства в системных настройках</string>
+    <string name="device_language_changed_success">Язык устройства успешно обновлен.</string>
+    <string name="device_language_change_requires_settings">Для смены языка устройства откройте системные настройки.</string>
+    <string name="device_language_settings_open_failed">Не удалось открыть системные настройки языка.</string>
     <string name="saving">Сохранение…</string>
     <string name="next">Далее</string>
     <string name="back">Назад</string>
@@ -22,8 +26,11 @@
     <string name="connected">Подключено</string>
     <string name="available_networks">Доступные сети</string>
     <string name="show_available_networks">Показать доступные сети</string>
+    <string name="scan_in_progress">Поиск Wi‑Fi сетей…</string>
+    <string name="sim_setup_unavailable">Настройка мобильной сети недоступна в этой сборке приложения.</string>
     <string name="connecting_to">Подключение к %1$s…</string>
     <string name="connection_failed">Ошибка подключения: %1$s</string>
+    <string name="connection_failed_generic">Подключение не удалось. Проверьте пароль и доступность сети.</string>
     <string name="wifi_connect_title">Подключение к Wi-Fi</string>
     <string name="network_name">Сеть: %1$s</string>
     <string name="password">Пароль</string>
