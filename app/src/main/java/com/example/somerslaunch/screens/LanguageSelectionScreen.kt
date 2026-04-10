@@ -26,6 +26,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.somerslaunch.R
+import com.example.somerslaunch.DeviceLanguageController
 import com.example.somerslaunch.utils.AppSettingsRepository
 import com.example.somerslaunch.utils.LanguageManager
 import com.example.somerslaunch.utils.SystemLanguage
@@ -56,6 +59,9 @@ fun LanguageSelectionScreen(
 ) {
     val availableLanguages = remember { languageManager.getAvailableLanguages() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val deviceLanguageController = remember { DeviceLanguageController() }
+    val deviceLanguageCapability = remember { deviceLanguageController.getCapability() }
 
     var selectedLanguage by remember { mutableStateOf(appSettingsRepository.getSelectedLanguage()) }
     var isSaving by remember { mutableStateOf(false) }
@@ -87,6 +93,29 @@ fun LanguageSelectionScreen(
                         isSelected = language.code == selectedLanguage,
                         onClick = { selectedLanguage = language.code }
                     )
+                }
+
+                item {
+                    Text(
+                        text = stringResource(R.string.device_language_not_supported_message),
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                    )
+
+                    TextButton(
+                        onClick = {
+                            if (!deviceLanguageCapability.canChangeDeviceLanguageInApp) {
+                                deviceLanguageController.openDeviceLanguageSettings(context)
+                            }
+                        },
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.open_device_language_settings),
+                            color = Color(0xFF176FC6)
+                        )
+                    }
                 }
             }
         }

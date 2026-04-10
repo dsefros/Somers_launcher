@@ -6,6 +6,8 @@
     <string name="start">Start</string>
     <string name="select_language">Select language</string>
     <string name="language">Language</string>
+    <string name="device_language_not_supported_message">This app can change only its own language. Device language requires system-level privileges on this terminal.</string>
+    <string name="open_device_language_settings">Change device language in system settings</string>
     <string name="saving">Saving…</string>
     <string name="next">Next</string>
     <string name="back">Back</string>

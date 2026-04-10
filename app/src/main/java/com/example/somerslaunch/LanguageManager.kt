@@ -30,7 +30,7 @@ class LanguageManager(private val context: Context) {
     fun getSystemLanguage(): String = Locale.getDefault().language
 
     fun getAvailableLanguages(): List<SystemLanguage> {
-        return listOf(
+        val languages = listOf(
             SystemLanguage("en", "English", "English"),
             SystemLanguage("ru", "Russian", "Русский"),
             SystemLanguage("fr", "French", "Français"),
@@ -40,7 +40,24 @@ class LanguageManager(private val context: Context) {
             SystemLanguage("zh", "Chinese", "中文"),
             SystemLanguage("ja", "Japanese", "日本語"),
             SystemLanguage("ko", "Korean", "한국어")
-        ).sortedBy { it.displayName }
+        )
+
+        return orderLanguages(languages)
+    }
+
+    companion object {
+        internal fun orderLanguages(languages: List<SystemLanguage>): List<SystemLanguage> {
+            val priorityOrder = mapOf(
+                "ru" to 0,
+                "en" to 1,
+                "zh" to 2
+            )
+
+            return languages.sortedWith(
+                compareBy<SystemLanguage> { priorityOrder[it.code] ?: 10 }
+                    .thenBy { it.displayName }
+            )
+        }
     }
 }
 

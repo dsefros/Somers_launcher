@@ -6,6 +6,8 @@
     <string name="start">Начать</string>
     <string name="select_language">Выберите язык</string>
     <string name="language">Язык</string>
+    <string name="device_language_not_supported_message">Приложение может менять только свой язык. Для смены языка всего устройства нужны системные привилегии терминала.</string>
+    <string name="open_device_language_settings">Сменить язык устройства в системных настройках</string>
     <string name="saving">Сохранение…</string>
     <string name="next">Далее</string>
     <string name="back">Назад</string>
