@@ -2,7 +2,33 @@
 <resources>
     <string name="app_name">SomersLaunch</string>
     <string name="welcome">Welcome!</string>
+    <string name="welcome_subtitle">You are holding a Somers POS terminal. Tap Start to continue setup.</string>
     <string name="start">Start</string>
-    <string name="select_language">Select Language</string>
+    <string name="select_language">Select language</string>
     <string name="language">Language</string>
+    <string name="saving">Saving…</string>
+    <string name="next">Next</string>
+    <string name="back">Back</string>
+    <string name="selected">Selected</string>
+    <string name="loading">Loading…</string>
+
+    <string name="select_wifi">Select Wi-Fi network</string>
+    <string name="refresh">Refresh</string>
+    <string name="permission_required">Location permission is required to scan Wi-Fi networks.</string>
+    <string name="wifi_disabled">Wi-Fi is turned off.</string>
+    <string name="enable">Enable</string>
+    <string name="connected">Connected</string>
+    <string name="available_networks">Available networks</string>
+    <string name="show_available_networks">Show available networks</string>
+    <string name="connecting_to">Connecting to %1$s…</string>
+    <string name="connection_failed">Connection failed: %1$s</string>
+    <string name="wifi_connect_title">Connect to Wi-Fi</string>
+    <string name="network_name">Network: %1$s</string>
+    <string name="password">Password</string>
+    <string name="connect">Connect</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="main_screen_title">Main screen</string>
+    <string name="main_screen_setup_complete">Setup completed</string>
+    <string name="main_screen_launcher_placeholder">Launcher will be shown here</string>
 </resources>

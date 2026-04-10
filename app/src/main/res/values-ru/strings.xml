@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SomersLaunch</string>
+    <string name="welcome">Добро пожаловать!</string>
+    <string name="welcome_subtitle">У вас в руках POS-терминал от компании Сомерс. Нажмите «Начать», чтобы продолжить настройку.</string>
+    <string name="start">Начать</string>
+    <string name="select_language">Выберите язык</string>
+    <string name="language">Язык</string>
+    <string name="saving">Сохранение…</string>
+    <string name="next">Далее</string>
+    <string name="back">Назад</string>
+    <string name="selected">Выбрано</string>
+    <string name="loading">Загрузка…</string>
+
+    <string name="select_wifi">Выберите Wi-Fi сеть</string>
+    <string name="refresh">Обновить</string>
+    <string name="permission_required">Для сканирования Wi-Fi требуется разрешение на геолокацию.</string>
+    <string name="wifi_disabled">Wi-Fi выключен.</string>
+    <string name="enable">Включить</string>
+    <string name="connected">Подключено</string>
+    <string name="available_networks">Доступные сети</string>
+    <string name="show_available_networks">Показать доступные сети</string>
+    <string name="connecting_to">Подключение к %1$s…</string>
+    <string name="connection_failed">Ошибка подключения: %1$s</string>
+    <string name="wifi_connect_title">Подключение к Wi-Fi</string>
+    <string name="network_name">Сеть: %1$s</string>
+    <string name="password">Пароль</string>
+    <string name="connect">Подключиться</string>
+    <string name="cancel">Отмена</string>
+
+    <string name="main_screen_title">Главный экран</string>
+    <string name="main_screen_setup_complete">Настройка завершена</string>
+    <string name="main_screen_launcher_placeholder">Лаунчер будет здесь</string>
+</resources>

@@ -1,51 +1,34 @@
 package com.example.somerslaunch.utils
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.res.Configuration
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import java.util.Locale
 
-private val Context.dataStore by preferencesDataStore("app_settings")
-
 class LanguageManager(private val context: Context) {
-    companion object {
-        private val LANGUAGE_KEY = stringPreferencesKey("selected_language")
+
+    fun applyLanguage(languageCode: String): Boolean {
+        return runCatching {
+            val locale = Locale(languageCode)
+            Locale.setDefault(locale)
+
+            val configuration = Configuration(context.resources.configuration)
+            configuration.setLocale(locale)
+            context.resources.updateConfiguration(configuration, context.resources.displayMetrics)
+        }.isSuccess
     }
 
-    // Получаем сохраненный язык как Flow
-    val languageFlow: Flow<String> = context.dataStore.data
-        .map { preferences ->
-            preferences[LANGUAGE_KEY] ?: getSystemLanguage()
-        }
-
-    // Сохраняем язык
-    suspend fun saveLanguage(languageCode: String) {
-        context.dataStore.edit { preferences ->
-            preferences[LANGUAGE_KEY] = languageCode
-        }
-        applyLanguage(languageCode)
-    }
-
-    // Получаем язык системы
-    fun getSystemLanguage(): String {
-        return Locale.getDefault().language
-    }
-
-    // Применяем язык к приложению
-    private fun applyLanguage(languageCode: String) {
+    fun wrapContext(base: Context, languageCode: String): ContextWrapper {
         val locale = Locale(languageCode)
         Locale.setDefault(locale)
 
-        val config = Configuration(context.resources.configuration)
-        config.setLocale(locale)
-        context.resources.updateConfiguration(config, context.resources.displayMetrics)
+        val configuration = Configuration(base.resources.configuration)
+        configuration.setLocale(locale)
+        return ContextWrapper(base.createConfigurationContext(configuration))
     }
 
-    // Получаем список доступных языков (фиксированный список)
+    fun getSystemLanguage(): String = Locale.getDefault().language
+
     fun getAvailableLanguages(): List<SystemLanguage> {
         return listOf(
             SystemLanguage("en", "English", "English"),
