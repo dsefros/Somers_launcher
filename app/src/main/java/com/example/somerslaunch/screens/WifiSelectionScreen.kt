@@ -134,6 +134,8 @@ private fun WifiNetworkItem(network: WifiNetwork, isConnected: Boolean, onClick:
 fun WifiSelectionScreen(navController: NavController, onWifiConnected: (WifiUiState) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val connectionFailedGeneric = stringResource(R.string.connection_failed_generic)
+    val connectText = stringResource(R.string.connect)
     val wifiManager = remember { WifiManager(context) }
     val onboardingProcess = remember { OnboardingProcess() }
 
@@ -397,13 +399,13 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: (WifiUiSt
                                 showPasswordDialog = false
                                 refreshState()
                             } else {
-                                connectionError = stringResource(R.string.connection_failed_generic)
+                                connectionError = connectionFailedGeneric
                             }
                         }
                     },
                     enabled = !isConnecting
                 ) {
-                    Text(stringResource(R.string.connect))
+                    Text(connectText)
                 }
             },
             dismissButton = {
