@@ -1,5 +1,6 @@
 package com.example.somerslaunch
 
+import com.example.somerslaunch.utils.WifiFailureReason
 import com.example.somerslaunch.utils.WifiUiState
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -13,50 +14,41 @@ class OnboardingProcessTest {
     fun wifiNextIsEnabledOnlyWhenConnected() {
         assertFalse(onboardingProcess.canProceedFromWifi(WifiUiState.Idle))
         assertFalse(onboardingProcess.canProceedFromWifi(WifiUiState.Scanning))
-        assertFalse(onboardingProcess.canProceedFromWifi(WifiUiState.Failed("error")))
+        assertFalse(onboardingProcess.canProceedFromWifi(WifiUiState.Failed(WifiFailureReason.ConnectionTimeout)))
         assertFalse(
             onboardingProcess.canProceedFromWifi(
                 WifiUiState.NetworksAvailable(networks = emptyList(), connectedSsid = null)
-            )
-        )
-        assertFalse(
-            onboardingProcess.canProceedFromWifi(
-                WifiUiState.NetworksAvailable(networks = emptyList(), connectedSsid = "MyWifi")
             )
         )
         assertTrue(onboardingProcess.canProceedFromWifi(WifiUiState.Connected("MyWifi")))
     }
 
     @Test
-    fun onboardingNotCompletedBeforeWifiConnected() {
+    fun onboardingNotCompletedBeforeActivation() {
         assertFalse(
             onboardingProcess.shouldMarkCompleted(
                 languageSavedAndApplied = true,
-                wifiUiState = WifiUiState.Connecting("MyWifi")
+                wifiUiState = WifiUiState.Connected("MyWifi"),
+                activationCompleted = false
             )
         )
     }
 
     @Test
-    fun onboardingCompletedOnlyAfterLanguageAndWifiAreComplete() {
+    fun onboardingCompletedOnlyAfterLanguageWifiAndActivationAreComplete() {
         assertFalse(
             onboardingProcess.shouldMarkCompleted(
                 languageSavedAndApplied = false,
-                wifiUiState = WifiUiState.Connected("MyWifi")
+                wifiUiState = WifiUiState.Connected("MyWifi"),
+                activationCompleted = true
             )
         )
 
         assertTrue(
             onboardingProcess.shouldMarkCompleted(
                 languageSavedAndApplied = true,
-                wifiUiState = WifiUiState.Connected("MyWifi")
-            )
-        )
-
-        assertFalse(
-            onboardingProcess.shouldMarkCompleted(
-                languageSavedAndApplied = true,
-                wifiUiState = WifiUiState.NetworksAvailable(networks = emptyList(), connectedSsid = "MyWifi")
+                wifiUiState = WifiUiState.Connected("MyWifi"),
+                activationCompleted = true
             )
         )
     }

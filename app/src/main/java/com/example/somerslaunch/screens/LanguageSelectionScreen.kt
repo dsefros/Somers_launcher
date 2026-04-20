@@ -163,8 +163,9 @@ fun LanguageSelectionScreen(
                             isSaving = true
                             val saved = appSettingsRepository.setSelectedLanguage(selectedLanguage)
                             val applied = languageManager.applyLanguage(selectedLanguage)
+                            val selectionStored = appSettingsRepository.setLanguageSelectionCompleted(true)
                             isSaving = false
-                            if (saved && applied) {
+                            if (saved && applied && selectionStored) {
                                 val systemLanguageChange = deviceLanguageChanger.applyDeviceLanguage(selectedLanguage)
                                 if (systemLanguageChange.isSuccess) {
                                     deviceLanguageMessage = deviceLanguageChangedSuccessMessage
