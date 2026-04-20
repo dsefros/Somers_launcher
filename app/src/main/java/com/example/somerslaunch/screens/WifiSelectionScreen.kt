@@ -58,6 +58,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.somerslaunch.OnboardingProcess
 import com.example.somerslaunch.R
+import com.example.somerslaunch.utils.WifiFailureReason
 import com.example.somerslaunch.utils.WifiManager
 import com.example.somerslaunch.utils.WifiNetwork
 import com.example.somerslaunch.utils.WifiUiState
@@ -71,6 +72,16 @@ internal fun resolveConfirmedConnectedSsid(
         is WifiUiState.Connected -> wifiUiState.ssid
         is WifiUiState.NetworksAvailable -> wifiUiState.connectedSsid
         else -> null
+    }
+}
+
+
+
+@Composable
+private fun failureReasonText(reason: WifiFailureReason): String {
+    return when (reason) {
+        WifiFailureReason.CouldNotConfigureNetwork -> stringResource(R.string.connection_failed_could_not_configure)
+        WifiFailureReason.ConnectionTimeout -> stringResource(R.string.connection_failed_timeout)
     }
 }
 
@@ -131,7 +142,7 @@ private fun WifiNetworkItem(network: WifiNetwork, isConnected: Boolean, onClick:
 }
 
 @Composable
-fun WifiSelectionScreen(navController: NavController, onWifiConnected: (WifiUiState) -> Unit) {
+fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val connectionFailedGeneric = stringResource(R.string.connection_failed_generic)
@@ -326,7 +337,7 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: (WifiUiSt
 
                 is WifiUiState.Failed -> {
                     Text(
-                        text = stringResource(R.string.connection_failed, state.reason),
+                        text = stringResource(R.string.connection_failed, failureReasonText(state.reason)),
                         modifier = Modifier.padding(24.dp),
                         color = Color.Red
                     )
@@ -345,7 +356,7 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: (WifiUiSt
                 }
 
                 Button(
-                    onClick = { proceedState?.let(onWifiConnected) },
+                    onClick = { if (isConnected) onWifiConnected() },
                     enabled = isConnected,
                     modifier = Modifier.width(108.dp).height(48.dp),
                     shape = RoundedCornerShape(20.dp),

@@ -13,6 +13,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
+enum class WifiFailureReason {
+    CouldNotConfigureNetwork,
+    ConnectionTimeout
+}
+
 sealed interface WifiUiState {
     data object PermissionRequired : WifiUiState
     data object WifiDisabled : WifiUiState
@@ -22,9 +27,10 @@ sealed interface WifiUiState {
         val networks: List<WifiNetwork>,
         val connectedSsid: String?
     ) : WifiUiState
+
     data class Connecting(val ssid: String) : WifiUiState
     data class Connected(val ssid: String) : WifiUiState
-    data class Failed(val reason: String) : WifiUiState
+    data class Failed(val reason: WifiFailureReason) : WifiUiState
 }
 
 data class WifiNetwork(
@@ -136,7 +142,7 @@ class WifiManager(private val context: Context) {
 
             val networkId = wifiManager.addNetwork(config)
             if (networkId == -1) {
-                updateState(WifiUiState.Failed("Could not configure network"))
+                updateState(WifiUiState.Failed(WifiFailureReason.CouldNotConfigureNetwork))
                 return@withContext false
             }
 
@@ -150,7 +156,7 @@ class WifiManager(private val context: Context) {
 
             pendingConnectionTracker.clear()
             if (!connected) {
-                updateState(WifiUiState.Failed("Connection timeout"))
+                updateState(WifiUiState.Failed(WifiFailureReason.ConnectionTimeout))
             }
             connected
         }
