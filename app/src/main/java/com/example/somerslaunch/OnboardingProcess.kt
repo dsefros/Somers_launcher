@@ -7,11 +7,16 @@ class OnboardingProcess {
         return wifiUiState is WifiUiState.Connected
     }
 
-    fun shouldMarkCompleted(languageSavedAndApplied: Boolean, wifiUiState: WifiUiState): Boolean {
+    fun shouldMarkCompleted(
+        languageSavedAndApplied: Boolean,
+        wifiUiState: WifiUiState,
+        activationCompleted: Boolean
+    ): Boolean {
         return SetupFlow.canCompleteOnboarding(
             SetupProgress(
                 languageSavedAndApplied = languageSavedAndApplied,
-                wifiConnected = wifiUiState is WifiUiState.Connected
+                wifiConnected = wifiUiState is WifiUiState.Connected,
+                activationCompleted = activationCompleted
             )
         )
     }

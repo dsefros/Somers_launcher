@@ -12,6 +12,12 @@ class AppSettingsRepository(context: Context) {
         return prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETED, completed).commit()
     }
 
+    fun isLanguageSelectionCompleted(): Boolean = prefs.getBoolean(KEY_LANGUAGE_SELECTION_COMPLETED, false)
+
+    fun setLanguageSelectionCompleted(completed: Boolean): Boolean {
+        return prefs.edit().putBoolean(KEY_LANGUAGE_SELECTION_COMPLETED, completed).commit()
+    }
+
     fun getSelectedLanguage(): String = resolveSelectedLanguage(prefs.getString(KEY_SELECTED_LANGUAGE, null))
 
     fun setSelectedLanguage(languageCode: String): Boolean {
@@ -21,6 +27,7 @@ class AppSettingsRepository(context: Context) {
     companion object {
         private const val PREFS_NAME = "app_prefs"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
+        private const val KEY_LANGUAGE_SELECTION_COMPLETED = "language_selection_completed"
         private const val KEY_SELECTED_LANGUAGE = "selected_language"
         internal const val DEFAULT_LANGUAGE = "ru"
 

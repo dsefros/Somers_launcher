@@ -14,10 +14,22 @@ class SetupFlowTest {
     }
 
     @Test
-    fun completionRequiresBothLanguageAndWifi() {
-        assertFalse(SetupFlow.canCompleteOnboarding(SetupProgress(languageSavedAndApplied = false, wifiConnected = false)))
-        assertFalse(SetupFlow.canCompleteOnboarding(SetupProgress(languageSavedAndApplied = true, wifiConnected = false)))
-        assertFalse(SetupFlow.canCompleteOnboarding(SetupProgress(languageSavedAndApplied = false, wifiConnected = true)))
-        assertTrue(SetupFlow.canCompleteOnboarding(SetupProgress(languageSavedAndApplied = true, wifiConnected = true)))
+    fun stepAfterWelcomeDependsOnLanguageSelectionFlag() {
+        assertEquals(SetupStep.LanguageSelection, SetupFlow.resolveStepAfterWelcome(languageSelectionCompleted = false))
+        assertEquals(SetupStep.WifiSelection, SetupFlow.resolveStepAfterWelcome(languageSelectionCompleted = true))
+    }
+
+    @Test
+    fun completionRequiresLanguageWifiAndActivation() {
+        assertFalse(
+            SetupFlow.canCompleteOnboarding(
+                SetupProgress(languageSavedAndApplied = true, wifiConnected = true, activationCompleted = false)
+            )
+        )
+        assertTrue(
+            SetupFlow.canCompleteOnboarding(
+                SetupProgress(languageSavedAndApplied = true, wifiConnected = true, activationCompleted = true)
+            )
+        )
     }
 }

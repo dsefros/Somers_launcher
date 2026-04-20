@@ -4,25 +4,18 @@ import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.somerslaunch.screens.ActivationScreen
+import com.example.somerslaunch.screens.ActivityAppCloser
 import com.example.somerslaunch.screens.LanguageSelectionScreen
+import com.example.somerslaunch.screens.SetupCompletionScreen
 import com.example.somerslaunch.screens.WelcomeScreen
 import com.example.somerslaunch.screens.WifiSelectionScreen
 import com.example.somerslaunch.utils.AppSettingsRepository
@@ -54,7 +47,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     AppNavigation(
                         appSettingsRepository = appSettingsRepository,
-                        languageManager = languageManager
+                        languageManager = languageManager,
+                        closeApp = { finishAffinity() }
                     )
                 }
             }
@@ -65,17 +59,22 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation(
     appSettingsRepository: AppSettingsRepository,
-    languageManager: LanguageManager
+    languageManager: LanguageManager,
+    closeApp: () -> Unit
 ) {
     val navController = rememberNavController()
-    val onboardingProcess = OnboardingProcess()
     val startDestination = SetupFlow.resolveStartStep(appSettingsRepository.isOnboardingCompleted()).route
 
     NavHost(navController = navController, startDestination = startDestination) {
         composable(SetupStep.Welcome.route) {
-            WelcomeScreen(navController = navController) {
-                navController.navigate(SetupStep.LanguageSelection.route)
-            }
+            WelcomeScreen(
+                onComplete = {
+                    val nextStep = SetupFlow.resolveStepAfterWelcome(
+                        appSettingsRepository.isLanguageSelectionCompleted()
+                    )
+                    navController.navigate(nextStep.route)
+                }
+            )
         }
 
         composable(SetupStep.LanguageSelection.route) {
@@ -83,9 +82,10 @@ fun AppNavigation(
                 navController = navController,
                 languageManager = languageManager,
                 appSettingsRepository = appSettingsRepository,
-                onLanguageSaved = { languageCode ->
-                    languageManager.applyLanguage(languageCode)
-                    navController.navigate(SetupStep.WifiSelection.route)
+                onLanguageSaved = {
+                    navController.navigate(SetupStep.Welcome.route) {
+                        popUpTo(SetupStep.Welcome.route) { inclusive = true }
+                    }
                 }
             )
         }
@@ -93,50 +93,26 @@ fun AppNavigation(
         composable(SetupStep.WifiSelection.route) {
             WifiSelectionScreen(
                 navController = navController,
-                onWifiConnected = { wifiUiState ->
-                    val hasLanguage = appSettingsRepository.getSelectedLanguage().isNotBlank()
-                    val canComplete = onboardingProcess.shouldMarkCompleted(
-                        languageSavedAndApplied = hasLanguage,
-                        wifiUiState = wifiUiState
-                    )
-                    if (canComplete) {
-                        appSettingsRepository.setOnboardingCompleted(true)
-                        navController.navigate(SetupStep.Completed.route) {
-                            popUpTo(SetupStep.Welcome.route) { inclusive = true }
-                        }
+                onWifiConnected = {
+                    navController.navigate(SetupStep.Activation.route)
+                }
+            )
+        }
+
+        composable(SetupStep.Activation.route) {
+            ActivationScreen(
+                appSettingsRepository = appSettingsRepository,
+                onActivationCompleted = {
+                    navController.navigate(SetupStep.Completed.route) {
+                        popUpTo(SetupStep.Welcome.route) { inclusive = true }
                     }
                 }
             )
         }
 
         composable(SetupStep.Completed.route) {
-            MainScreen()
-        }
-    }
-}
-
-@Composable
-fun MainScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.main_screen_title),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF176FC6)
-            )
-            Text(
-                text = stringResource(R.string.main_screen_setup_complete),
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
-            Text(
-                text = stringResource(R.string.main_screen_launcher_placeholder),
-                fontSize = 14.sp,
-                color = Color.Gray
+            SetupCompletionScreen(
+                appCloser = ActivityAppCloser(closeApp)
             )
         }
     }
