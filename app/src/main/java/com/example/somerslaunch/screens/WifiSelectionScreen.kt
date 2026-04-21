@@ -34,6 +34,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,7 +54,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.somerslaunch.OnboardingProcess
@@ -128,12 +128,16 @@ private fun WifiNetworkItem(network: WifiNetwork, isConnected: Boolean, onClick:
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = network.ssid,
-                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = if (isConnected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isConnected) Color(0xFF176FC6) else Color.Black
                     )
                     if (isConnected) {
-                        Text(text = stringResource(R.string.connected), fontSize = 12.sp, color = Color(0xFF176FC6))
+                        Text(
+                            text = stringResource(R.string.connected),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF176FC6)
+                        )
                     }
                 }
             }
@@ -202,8 +206,7 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
             Spacer(modifier = Modifier.height(40.dp))
             Text(
                 text = stringResource(R.string.select_wifi),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color.Black,
                 modifier = Modifier.padding(top = 8.dp, start = 24.dp, end = 24.dp)
             )
@@ -273,8 +276,7 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
                             item {
                                 Text(
                                     text = stringResource(R.string.connected),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                     color = Color(0xFF176FC6),
                                     modifier = Modifier.padding(horizontal = 24.dp)
                                 )
@@ -286,8 +288,7 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
                             item {
                                 Text(
                                     text = stringResource(R.string.available_networks),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                     color = Color.Gray,
                                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                                 )
@@ -306,7 +307,7 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
                         item {
                             Text(
                                 text = stringResource(R.string.sim_setup_unavailable),
-                                fontSize = 12.sp,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = Color.Gray,
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                             )
@@ -388,7 +389,7 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
                         Text(
                             text = connectionError!!,
                             color = Color.Red,
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(top = 8.dp)
                         )
                     }
