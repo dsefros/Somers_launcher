@@ -42,6 +42,7 @@
     <string name="main_screen_launcher_placeholder">Launcher will be shown here</string>
     <string name="setup_complete_title">Activation completed!</string>
     <string name="start_work">Start working</string>
+    <string name="activation_wait_title">Please wait</string>
     <string name="activation_title">Terminal activation</string>
     <string name="activation_preparing">Preparing activation…</string>
     <string name="activation_step_counter">Step %1$d of %2$d</string>
