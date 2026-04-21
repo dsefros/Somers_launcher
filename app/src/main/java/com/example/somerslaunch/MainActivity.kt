@@ -18,6 +18,7 @@ import com.example.somerslaunch.screens.LanguageSelectionScreen
 import com.example.somerslaunch.screens.SetupCompletionScreen
 import com.example.somerslaunch.screens.WelcomeScreen
 import com.example.somerslaunch.screens.WifiSelectionScreen
+import com.example.somerslaunch.ui.theme.SomersLaunchTheme
 import com.example.somerslaunch.utils.AppSettingsRepository
 import com.example.somerslaunch.utils.LanguageManager
 
@@ -40,7 +41,7 @@ class MainActivity : ComponentActivity() {
         languageManager.applyLanguage(appSettingsRepository.getSelectedLanguage())
 
         setContent {
-            MaterialTheme {
+            SomersLaunchTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

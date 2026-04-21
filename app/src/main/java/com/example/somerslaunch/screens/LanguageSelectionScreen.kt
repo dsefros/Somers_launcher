@@ -25,6 +25,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,7 +42,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.somerslaunch.R
 import com.example.somerslaunch.DeviceLanguageChangerFactory
@@ -79,8 +79,7 @@ fun LanguageSelectionScreen(
 
             Text(
                 text = stringResource(R.string.select_language),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = Color.Black,
                 modifier = Modifier.padding(top = 8.dp, start = 24.dp, end = 24.dp)
             )
@@ -107,7 +106,7 @@ fun LanguageSelectionScreen(
 
                     Text(
                         text = capabilityText,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray,
                         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
                     )
@@ -115,7 +114,7 @@ fun LanguageSelectionScreen(
                     deviceLanguageMessage?.let {
                         Text(
                             text = it,
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF176FC6),
                             modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
                         )
@@ -191,8 +190,7 @@ fun LanguageSelectionScreen(
                     Text(
                         text = if (isSaving) stringResource(R.string.saving) else stringResource(R.string.next),
                         color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium)
                     )
                 }
             }
@@ -221,11 +219,15 @@ fun LanguageItem(language: SystemLanguage, isSelected: Boolean, onClick: () -> U
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = language.displayName,
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                     color = if (isSelected) Color(0xFF176FC6) else Color.Black
                 )
-                Text(text = language.nativeName, fontSize = 13.sp, color = Color.Gray)
+                Text(
+                    text = language.nativeName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
             }
 
             if (isSelected) {

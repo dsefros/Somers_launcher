@@ -36,7 +36,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.somerslaunch.R
 import com.example.somerslaunch.activation.ActivationStage
@@ -90,8 +89,7 @@ fun ActivationScreen(
                 .fillMaxWidth()
                 .align(Alignment.TopCenter),
             text = stringResource(R.string.activation_wait_title),
-            fontSize = 28.sp,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
             textAlign = TextAlign.Center,
             color = Color(0xFF1A2233)
         )
@@ -117,11 +115,11 @@ fun ActivationScreen(
             ) { text ->
                 Text(
                     text = text,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium,
-                    fontSize = 18.sp,
                     textAlign = TextAlign.Center,
-                    lineHeight = 24.sp
+                    lineHeight = MaterialTheme.typography.titleMedium.lineHeight
                 )
             }
 
@@ -134,8 +132,8 @@ fun ActivationScreen(
                         (state as ActivationUiState.InProgress).progress.stepNumber,
                         (state as ActivationUiState.InProgress).progress.totalSteps
                     ),
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF6A7384),
-                    fontSize = 14.sp,
                     textAlign = TextAlign.Center
                 )
             }
