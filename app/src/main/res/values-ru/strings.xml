@@ -42,6 +42,7 @@
     <string name="main_screen_launcher_placeholder">Лаунчер будет здесь</string>
     <string name="setup_complete_title">Активация завершена!</string>
     <string name="start_work">Начать работу</string>
+    <string name="activation_wait_title">Пожалуйста, подождите</string>
     <string name="activation_title">Активация терминала</string>
     <string name="activation_preparing">Подготавливаем активацию…</string>
     <string name="activation_step_counter">Шаг %1$d из %2$d</string>

@@ -1,6 +1,17 @@
 package com.example.somerslaunch.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,10 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,7 +30,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,85 +69,93 @@ fun ActivationScreen(
         // Back is intentionally blocked while activation is in progress.
     }
 
+    val spinnerTransition = rememberInfiniteTransition(label = "activation_spinner")
+    val logoRotation by spinnerTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "activation_logo_rotation"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+            .padding(horizontal = 24.dp, vertical = 32.dp)
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF6F8FB))
+        Text(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter),
+            text = stringResource(R.string.activation_wait_title),
+            fontSize = 28.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            color = Color(0xFF1A2233)
+        )
+
+        Image(
+            painter = painterResource(id = R.mipmap.ic_launcher_round),
+            contentDescription = null,
+            modifier = Modifier
+                .size(108.dp)
+                .align(Alignment.Center)
+                .rotate(logoRotation)
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
+            AnimatedContent(
+                targetState = statusText(state),
+                transitionSpec = { fadeIn(tween(280)) togetherWith fadeOut(tween(220)) },
+                label = "activation_status"
+            ) { text ->
                 Text(
-                    text = stringResource(R.string.activation_title),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
+                    text = text,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 24.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (state is ActivationUiState.InProgress) {
+                Text(
+                    text = stringResource(
+                        R.string.activation_step_counter,
+                        (state as ActivationUiState.InProgress).progress.stepNumber,
+                        (state as ActivationUiState.InProgress).progress.totalSteps
+                    ),
+                    color = Color(0xFF6A7384),
+                    fontSize = 14.sp,
                     textAlign = TextAlign.Center
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                when (val currentState = state) {
-                    ActivationUiState.Idle -> {
-                        CircularProgressIndicator(color = Color(0xFF176FC6))
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.activation_preparing),
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-
-                    is ActivationUiState.InProgress -> {
-                        CircularProgressIndicator(color = Color(0xFF176FC6))
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(
-                                R.string.activation_step_counter,
-                                currentState.progress.stepNumber,
-                                currentState.progress.totalSteps
-                            ),
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = activationStageText(currentState.progress.stage),
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-
-                    ActivationUiState.Success -> {
-                        Text(
-                            text = stringResource(R.string.activation_success),
-                            color = Color(0xFF176FC6),
-                            textAlign = TextAlign.Center,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    is ActivationUiState.Error -> {
-                        Text(
-                            text = stringResource(R.string.activation_error, currentState.cause?.localizedMessage ?: stringResource(R.string.activation_unknown_error)),
-                            color = Color.Red,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
             }
         }
+    }
+}
+
+@Composable
+private fun statusText(state: ActivationUiState): String {
+    return when (state) {
+        ActivationUiState.Idle -> stringResource(R.string.activation_preparing)
+        is ActivationUiState.InProgress -> activationStageText(state.progress.stage)
+        ActivationUiState.Success -> stringResource(R.string.activation_success)
+        is ActivationUiState.Error -> stringResource(
+            R.string.activation_error,
+            state.cause?.localizedMessage ?: stringResource(R.string.activation_unknown_error)
+        )
     }
 }
 
