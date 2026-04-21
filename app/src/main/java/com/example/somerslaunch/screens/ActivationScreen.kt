@@ -11,7 +11,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,11 +31,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.somerslaunch.R
@@ -97,9 +96,7 @@ fun ActivationScreen(
             color = Color(0xFF1A2233)
         )
 
-        Image(
-            painter = painterResource(id = R.mipmap.ic_launcher_round),
-            contentDescription = null,
+        ActivationSpinner(
             modifier = Modifier
                 .size(108.dp)
                 .align(Alignment.Center)
@@ -143,6 +140,28 @@ fun ActivationScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ActivationSpinner(modifier: Modifier = Modifier) {
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val strokeWidth = size.minDimension * 0.12f
+        drawCircle(
+            color = Color(0xFFE6EAF2),
+            style = Stroke(width = strokeWidth)
+        )
+        drawArc(
+            color = Color(0xFF1A2233),
+            startAngle = -90f,
+            sweepAngle = 120f,
+            useCenter = false,
+            style = Stroke(width = strokeWidth)
+        )
+        drawCircle(
+            color = Color(0xFF1A2233),
+            radius = size.minDimension * 0.14f
+        )
     }
 }
 
