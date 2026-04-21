@@ -2,7 +2,7 @@ package com.example.somerslaunch.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,11 +32,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.somerslaunch.R
 import com.example.somerslaunch.activation.ActivationStage
@@ -72,7 +74,7 @@ fun ActivationScreen(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 4200, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "activation_logo_rotation"
@@ -82,21 +84,24 @@ fun ActivationScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 24.dp, vertical = 32.dp)
+            .padding(horizontal = 24.dp)
     ) {
         Text(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.TopCenter),
+                .align(Alignment.TopCenter)
+                .padding(top = 124.dp),
             text = stringResource(R.string.activation_wait_title),
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
             textAlign = TextAlign.Center,
-            color = Color(0xFF1A2233)
+            color = Color.Black
         )
 
-        ActivationSpinner(
+        Image(
+            painter = painterResource(R.drawable.ic_activation_logo),
+            contentDescription = null,
             modifier = Modifier
-                .size(108.dp)
+                .size(168.dp)
                 .align(Alignment.Center)
                 .rotate(logoRotation)
         )
@@ -104,7 +109,8 @@ fun ActivationScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter),
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 72.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -115,15 +121,14 @@ fun ActivationScreen(
             ) { text ->
                 Text(
                     text = text,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.bodyMedium.asActivationStatusText(),
+                    color = Color(0xFF5F6B7D),
                     textAlign = TextAlign.Center,
-                    lineHeight = MaterialTheme.typography.titleMedium.lineHeight
+                    lineHeight = MaterialTheme.typography.bodyMedium.lineHeight
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             if (state is ActivationUiState.InProgress) {
                 Text(
@@ -134,6 +139,7 @@ fun ActivationScreen(
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color(0xFF6A7384),
+                    fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
             }
@@ -141,27 +147,7 @@ fun ActivationScreen(
     }
 }
 
-@Composable
-private fun ActivationSpinner(modifier: Modifier = Modifier) {
-    androidx.compose.foundation.Canvas(modifier = modifier) {
-        val strokeWidth = size.minDimension * 0.12f
-        drawCircle(
-            color = Color(0xFFE6EAF2),
-            style = Stroke(width = strokeWidth)
-        )
-        drawArc(
-            color = Color(0xFF1A2233),
-            startAngle = -90f,
-            sweepAngle = 120f,
-            useCenter = false,
-            style = Stroke(width = strokeWidth)
-        )
-        drawCircle(
-            color = Color(0xFF1A2233),
-            radius = size.minDimension * 0.14f
-        )
-    }
-}
+private fun TextStyle.asActivationStatusText(): TextStyle = copy(fontWeight = FontWeight.Medium)
 
 @Composable
 private fun statusText(state: ActivationUiState): String {
