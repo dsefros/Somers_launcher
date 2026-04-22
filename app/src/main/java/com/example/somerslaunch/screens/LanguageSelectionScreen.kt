@@ -42,6 +42,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.somerslaunch.R
 import com.example.somerslaunch.DeviceLanguageChangerFactory
@@ -79,7 +80,7 @@ fun LanguageSelectionScreen(
 
             Text(
                 text = stringResource(R.string.select_language),
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontSize = 24.sp),
                 color = Color.Black,
                 modifier = Modifier.padding(top = 8.dp, start = 24.dp, end = 24.dp)
             )

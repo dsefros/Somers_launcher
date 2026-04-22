@@ -54,6 +54,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.somerslaunch.OnboardingProcess
@@ -206,7 +207,7 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
             Spacer(modifier = Modifier.height(40.dp))
             Text(
                 text = stringResource(R.string.select_wifi),
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold,fontSize = 24.sp),
                 color = Color.Black,
                 modifier = Modifier.padding(top = 8.dp, start = 24.dp, end = 24.dp)
             )

@@ -1,8 +1,6 @@
 package com.example.somerslaunch.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.scaleIn
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -14,40 +12,42 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.somerslaunch.R
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlin.math.min
@@ -80,12 +80,6 @@ fun SetupCompletionScreen(
     appCloser: AppCloser,
     viewModel: SetupCompletionViewModel = viewModel()
 ) {
-    var showIcon by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        showIcon = true
-    }
-
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             if (event is SetupCompletionEvent.CloseApp) {
@@ -98,20 +92,23 @@ fun SetupCompletionScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 24.dp, vertical = 32.dp)
+            .padding(horizontal = 24.dp)
     ) {
         Text(
             text = stringResource(R.string.setup_complete_title),
-            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp
+            ),
             color = Color.Black,
             textAlign = TextAlign.Center,
             modifier = Modifier
+                .fillMaxWidth()
                 .align(Alignment.TopCenter)
-                .padding(top = 24.dp)
+                .padding(top = 124.dp)
         )
 
-        SuccessPulse(
-            visible = showIcon,
+        SuccessIllustration(
             modifier = Modifier.align(Alignment.Center)
         )
 
@@ -119,90 +116,153 @@ fun SetupCompletionScreen(
             onClick = viewModel::onStartWorkClicked,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(64.dp),
-            shape = RoundedCornerShape(32.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF176FC6))
+                .padding(bottom = 56.dp)
+                .width(220.dp)
+                .height(56.dp),
+            shape = RoundedCornerShape(28.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF176FC6)
+            )
         ) {
             Text(
                 text = stringResource(R.string.start_work),
                 color = Color.White,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                )
             )
         }
     }
 }
 
 @Composable
-private fun SuccessPulse(
-    visible: Boolean,
+private fun SuccessIllustration(
     modifier: Modifier = Modifier
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "success-pulse")
+    val circleScale = remember { Animatable(0.72f) }
+    val circleAlpha = remember { Animatable(0f) }
+    val shortStrokeProgress = remember { Animatable(0f) }
+    val longStrokeProgress = remember { Animatable(0f) }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "success_pulse")
+
     val waveProgress by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2200, easing = LinearEasing),
+            animation = tween(durationMillis = 2400, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "wave-progress"
+        label = "wave_progress"
     )
 
     val iconScale by infiniteTransition.animateFloat(
-        initialValue = 0.97f,
-        targetValue = 1.03f,
+        initialValue = 0.985f,
+        targetValue = 1.025f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2200, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 1800, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "icon-scale"
+        label = "icon_scale"
     )
 
-    Box(modifier = modifier.size(260.dp), contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.matchParentSize()) {
+    LaunchedEffect(Unit) {
+        circleAlpha.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 260)
+        )
+        circleScale.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = 0.62f,
+                stiffness = 420f
+            )
+        )
+
+        delay(120)
+
+        shortStrokeProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
+        )
+
+        longStrokeProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing)
+        )
+    }
+
+    Box(
+        modifier = modifier.size(220.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
             val center = Offset(size.width / 2f, size.height / 2f)
-            val baseRadius = min(size.width, size.height) * 0.18f
+            val minSide = min(size.width, size.height)
 
             repeat(3) { ring ->
                 val ringOffset = ring / 3f
                 val progress = (waveProgress + ringOffset) % 1f
-                val radius = baseRadius + (size.minDimension * 0.34f * progress)
-                val alpha = (1f - progress) * 0.35f
+                val radius = minSide * (0.22f + 0.16f * progress)
+                val alpha = (1f - progress) * 0.22f
 
                 drawCircle(
                     color = Color(0xFF176FC6).copy(alpha = alpha),
                     radius = radius,
                     center = center,
-                    style = Stroke(width = 3.dp.toPx())
+                    style = Stroke(width = 2.5.dp.toPx())
                 )
             }
         }
 
-        AnimatedVisibility(
-            visible = visible,
-            enter = fadeIn(animationSpec = tween(450)) +
-                scaleIn(
-                    initialScale = 0.55f,
-                    animationSpec = spring(
-                        dampingRatio = 0.45f,
-                        stiffness = 240f
-                    )
+        Canvas(
+            modifier = Modifier
+                .size(118.dp)
+                .scale(circleScale.value * iconScale)
+                .alpha(circleAlpha.value)
+                .background(
+                    color = Color(0xFF176FC6),
+                    shape = CircleShape
                 )
         ) {
-            Box(
-                modifier = Modifier
-                    .size(118.dp)
-                    .scale(iconScale)
-                    .background(Color(0xFF176FC6), CircleShape)
-                    .alpha(0.98f),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(62.dp)
+            val w = size.width
+            val h = size.height
+
+            val p1 = Offset(w * 0.30f, h * 0.53f)
+            val p2 = Offset(w * 0.46f, h * 0.67f)
+            val p3 = Offset(w * 0.73f, h * 0.39f)
+
+            val shortCurrent = Offset(
+                x = p1.x + (p2.x - p1.x) * shortStrokeProgress.value,
+                y = p1.y + (p2.y - p1.y) * shortStrokeProgress.value
+            )
+
+            val longCurrent = Offset(
+                x = p2.x + (p3.x - p2.x) * longStrokeProgress.value,
+                y = p2.y + (p3.y - p2.y) * longStrokeProgress.value
+            )
+
+            val strokeWidth = 8.dp.toPx()
+
+            if (shortStrokeProgress.value > 0f) {
+                drawLine(
+                    color = Color.White,
+                    start = p1,
+                    end = shortCurrent,
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round
+                )
+            }
+
+            if (longStrokeProgress.value > 0f) {
+                drawLine(
+                    color = Color.White,
+                    start = p2,
+                    end = longCurrent,
+                    strokeWidth = strokeWidth,
+                    cap = StrokeCap.Round
                 )
             }
         }
