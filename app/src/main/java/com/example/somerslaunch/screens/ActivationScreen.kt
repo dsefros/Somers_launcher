@@ -47,6 +47,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -54,6 +55,9 @@ import com.example.somerslaunch.R
 import com.example.somerslaunch.activation.ActivationStage
 import com.example.somerslaunch.activation.ActivationUiState
 import com.example.somerslaunch.activation.ActivationViewModel
+import com.example.somerslaunch.ui.adaptive.AppAdaptiveMetrics
+import com.example.somerslaunch.ui.adaptive.rememberAdaptiveMetrics
+import com.example.somerslaunch.ui.theme.SomersLaunchTheme
 import com.example.somerslaunch.utils.AppSettingsRepository
 import kotlinx.coroutines.delay
 import kotlin.math.min
@@ -65,6 +69,7 @@ fun ActivationScreen(
     appSettingsRepository: AppSettingsRepository,
     onActivationCompleted: () -> Unit
 ) {
+    val metrics = rememberAdaptiveMetrics()
     val viewModel: ActivationViewModel = viewModel(
         factory = ActivationViewModel.provideFactory(appSettingsRepository)
     )
@@ -84,27 +89,39 @@ fun ActivationScreen(
         // Back is intentionally blocked while activation is in progress.
     }
 
+    ActivationScreenContent(
+        state = state,
+        metrics = metrics
+    )
+}
+
+@Composable
+private fun ActivationScreenContent(
+    state: ActivationUiState,
+    metrics: AppAdaptiveMetrics
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = metrics.contentHorizontalPadding)
     ) {
         Text(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
-                .padding(top = 124.dp),
+                .padding(top = metrics.titleTopPadding),
             text = stringResource(R.string.activation_wait_title),
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 24.sp
+                fontSize = metrics.titleFontSize
             ),
             textAlign = TextAlign.Center,
             color = Color.Black
         )
 
         ActivationIllustration(
+            metrics = metrics,
             modifier = Modifier.align(Alignment.Center)
         )
 
@@ -112,7 +129,7 @@ fun ActivationScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 110.dp),
+                .padding(bottom = metrics.statusSectionBottomPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -133,7 +150,7 @@ fun ActivationScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(metrics.statusToProgressSpacing))
 
             if (state is ActivationUiState.InProgress) {
                 val progressState = state as ActivationUiState.InProgress
@@ -144,7 +161,7 @@ fun ActivationScreen(
                 LinearProgressIndicator(
                     progress = { progress },
                     modifier = Modifier
-                        .fillMaxWidth(0.72f)
+                        .fillMaxWidth(metrics.progressWidthFraction)
                         .height(8.dp)
                         .clip(RoundedCornerShape(100.dp)),
                     color = Color(0xFF176FC6),
@@ -157,6 +174,7 @@ fun ActivationScreen(
 
 @Composable
 private fun ActivationIllustration(
+    metrics: AppAdaptiveMetrics,
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "activation_illustration")
@@ -208,7 +226,7 @@ private fun ActivationIllustration(
     )
 
     Box(
-        modifier = modifier.size(240.dp),
+        modifier = modifier.size(metrics.activationIllustrationContainerSize),
         contentAlignment = Alignment.Center
     ) {
         Canvas(
@@ -277,7 +295,7 @@ private fun ActivationIllustration(
             contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = Modifier
-                .size(64.dp)
+                .size(metrics.activationIllustrationLogoSize)
                 .scale(logoScale)
                 .alpha(0.99f)
         )
@@ -359,5 +377,41 @@ private fun activationStageText(stage: ActivationStage): String {
         ActivationStage.PrepareDataChannels -> stringResource(R.string.activation_stage_29)
         ActivationStage.RunSystemChecks -> stringResource(R.string.activation_stage_30)
         ActivationStage.CompleteEnvironmentSetup -> stringResource(R.string.activation_stage_31)
+    }
+}
+
+@Preview(name = "Activation Illustration Compact", widthDp = 320, heightDp = 568)
+@Preview(name = "Activation Illustration Medium", widthDp = 411, heightDp = 891)
+@Preview(name = "Activation Illustration Expanded", widthDp = 840, heightDp = 1280)
+@Composable
+private fun ActivationIllustrationPreview() {
+    SomersLaunchTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            ActivationIllustration(metrics = rememberAdaptiveMetrics())
+        }
+    }
+}
+
+@Preview(name = "Activation Full Compact", widthDp = 320, heightDp = 568)
+@Preview(name = "Activation Full Medium", widthDp = 411, heightDp = 891)
+@Preview(name = "Activation Full Expanded", widthDp = 840, heightDp = 1280)
+@Composable
+private fun ActivationScreenFullPreview() {
+    SomersLaunchTheme {
+        ActivationScreenContent(
+            state = ActivationUiState.InProgress(
+                progress = com.example.somerslaunch.activation.ActivationProgress(
+                    stage = ActivationStage.InitializeServiceEnvironment,
+                    stepNumber = 14,
+                    totalSteps = 31
+                )
+            ),
+            metrics = rememberAdaptiveMetrics()
+        )
     }
 }
