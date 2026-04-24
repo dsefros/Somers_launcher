@@ -210,7 +210,6 @@ fun LanguageItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = metrics.listItemHorizontalPadding)
             .clickable { onClick() },
         shape = RoundedCornerShape(30.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
