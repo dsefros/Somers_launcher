@@ -87,11 +87,13 @@ fun LanguageSelectionScreen(
                     fontSize = metrics.titleFontSize
                 ),
                 color = Color.Black,
-                modifier = Modifier.padding(top = metrics.titleTopPadding)
+                modifier = Modifier.padding(top = metrics.listScreenTitleTopPadding)
             )
 
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = metrics.topSectionSpacing),
                 verticalArrangement = Arrangement.spacedBy(metrics.topSectionSpacing),
                 contentPadding = PaddingValues(bottom = metrics.listContentBottomPadding)
             ) {

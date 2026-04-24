@@ -107,7 +107,7 @@ fun SetupCompletionScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
-                .padding(top = metrics.titleTopPadding)
+                .padding(top = metrics.heroTitleTopPadding)
         )
 
         SuccessIllustration(
