@@ -216,7 +216,6 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
             .padding(horizontal = metrics.contentHorizontalPadding)
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Spacer(modifier = Modifier.height(metrics.headerTopSpacer))
             Text(
                 text = stringResource(R.string.select_wifi),
                 style = MaterialTheme.typography.headlineMedium.copy(
@@ -224,7 +223,7 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
                     fontSize = metrics.titleFontSize
                 ),
                 color = Color.Black,
-                modifier = Modifier.padding(top = metrics.topSectionSpacing)
+                modifier = Modifier.padding(top = metrics.titleTopPadding)
             )
 
             Row(

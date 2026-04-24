@@ -89,6 +89,17 @@ fun ActivationScreen(
         // Back is intentionally blocked while activation is in progress.
     }
 
+    ActivationScreenContent(
+        state = state,
+        metrics = metrics
+    )
+}
+
+@Composable
+private fun ActivationScreenContent(
+    state: ActivationUiState,
+    metrics: AppAdaptiveMetrics
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -383,5 +394,24 @@ private fun ActivationIllustrationPreview() {
         ) {
             ActivationIllustration(metrics = rememberAdaptiveMetrics())
         }
+    }
+}
+
+@Preview(name = "Activation Full Compact", widthDp = 320, heightDp = 568)
+@Preview(name = "Activation Full Medium", widthDp = 411, heightDp = 891)
+@Preview(name = "Activation Full Expanded", widthDp = 840, heightDp = 1280)
+@Composable
+private fun ActivationScreenFullPreview() {
+    SomersLaunchTheme {
+        ActivationScreenContent(
+            state = ActivationUiState.InProgress(
+                progress = com.example.somerslaunch.activation.ActivationProgress(
+                    stage = ActivationStage.InitializeServiceEnvironment,
+                    stepNumber = 14,
+                    totalSteps = 31
+                )
+            ),
+            metrics = rememberAdaptiveMetrics()
+        )
     }
 }

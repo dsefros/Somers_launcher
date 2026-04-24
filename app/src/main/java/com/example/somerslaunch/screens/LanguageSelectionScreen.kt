@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -81,8 +80,6 @@ fun LanguageSelectionScreen(
             .padding(horizontal = metrics.contentHorizontalPadding)
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Spacer(modifier = Modifier.height(metrics.headerTopSpacer))
-
             Text(
                 text = stringResource(R.string.select_language),
                 style = MaterialTheme.typography.headlineMedium.copy(
@@ -90,7 +87,7 @@ fun LanguageSelectionScreen(
                     fontSize = metrics.titleFontSize
                 ),
                 color = Color.Black,
-                modifier = Modifier.padding(top = metrics.topSectionSpacing)
+                modifier = Modifier.padding(top = metrics.titleTopPadding)
             )
 
             LazyColumn(

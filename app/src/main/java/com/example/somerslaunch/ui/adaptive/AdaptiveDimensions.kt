@@ -20,7 +20,6 @@ data class AppAdaptiveMetrics(
     val sizeClass: ScreenSizeClass,
     val contentHorizontalPadding: Dp,
     val titleTopPadding: Dp,
-    val headerTopSpacer: Dp,
     val topSectionSpacing: Dp,
     val listItemHorizontalPadding: Dp,
     val listContentBottomPadding: Dp,
@@ -57,13 +56,14 @@ fun rememberAdaptiveMetrics(): AppAdaptiveMetrics {
 
     return remember(widthDp, heightDp) {
         val sizeClass = when {
-            widthDp < 360 || heightDp < 640 -> ScreenSizeClass.Compact
-            widthDp >= 600 || heightDp >= 900 -> ScreenSizeClass.Expanded
+            widthDp < 360 || (widthDp < 392 && heightDp < 760) -> ScreenSizeClass.Compact
+            widthDp >= 600 && heightDp >= 840 -> ScreenSizeClass.Expanded
             else -> ScreenSizeClass.Medium
         }
 
-        val titleTopPadding = (heightDp * 0.12f).dp.coerceIn(52.dp, 124.dp)
-        val statusBottomPadding = (heightDp * 0.14f).dp.coerceIn(56.dp, 128.dp)
+        val verticalBaseDp = minOf(heightDp, (widthDp * 2.1f).toInt())
+        val titleTopPadding = (verticalBaseDp * 0.11f).dp.coerceIn(52.dp, 116.dp)
+        val statusBottomPadding = (verticalBaseDp * 0.12f).dp.coerceIn(54.dp, 122.dp)
 
         // Базовый размер иллюстраций считаем в первую очередь от ширины экрана,
         // чтобы анимации не были слишком маленькими на длинных/узких дисплеях.
@@ -74,7 +74,6 @@ fun rememberAdaptiveMetrics(): AppAdaptiveMetrics {
                 sizeClass = sizeClass,
                 contentHorizontalPadding = 16.dp,
                 titleTopPadding = titleTopPadding,
-                headerTopSpacer = 16.dp,
                 topSectionSpacing = 8.dp,
                 listItemHorizontalPadding = 16.dp,
                 listContentBottomPadding = 12.dp,
@@ -107,7 +106,6 @@ fun rememberAdaptiveMetrics(): AppAdaptiveMetrics {
                 sizeClass = sizeClass,
                 contentHorizontalPadding = 20.dp,
                 titleTopPadding = titleTopPadding,
-                headerTopSpacer = 20.dp,
                 topSectionSpacing = 10.dp,
                 listItemHorizontalPadding = 24.dp,
                 listContentBottomPadding = 16.dp,
@@ -119,7 +117,7 @@ fun rememberAdaptiveMetrics(): AppAdaptiveMetrics {
                 primaryButtonWidthFraction = 0.70f,
                 secondaryActionButtonHeight = 48.dp,
                 secondaryActionButtonMinWidth = 108.dp,
-                secondaryActionButtonMaxWidth = 168.dp,
+                secondaryActionButtonMaxWidth = 172.dp,
                 iconButtonSize = 48.dp,
                 bottomAreaMinHeight = 64.dp,
                 bottomAreaVerticalPadding = 8.dp,
@@ -140,7 +138,6 @@ fun rememberAdaptiveMetrics(): AppAdaptiveMetrics {
                 sizeClass = sizeClass,
                 contentHorizontalPadding = 28.dp,
                 titleTopPadding = titleTopPadding,
-                headerTopSpacer = 26.dp,
                 topSectionSpacing = 12.dp,
                 listItemHorizontalPadding = 32.dp,
                 listContentBottomPadding = 20.dp,
@@ -152,7 +149,7 @@ fun rememberAdaptiveMetrics(): AppAdaptiveMetrics {
                 primaryButtonWidthFraction = 0.58f,
                 secondaryActionButtonHeight = 50.dp,
                 secondaryActionButtonMinWidth = 118.dp,
-                secondaryActionButtonMaxWidth = 180.dp,
+                secondaryActionButtonMaxWidth = 196.dp,
                 iconButtonSize = 52.dp,
                 bottomAreaMinHeight = 72.dp,
                 bottomAreaVerticalPadding = 10.dp,
