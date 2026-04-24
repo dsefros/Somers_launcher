@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,10 +44,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.somerslaunch.R
 import com.example.somerslaunch.DeviceLanguageChangerFactory
+import com.example.somerslaunch.R
+import com.example.somerslaunch.ui.adaptive.AppAdaptiveMetrics
+import com.example.somerslaunch.ui.adaptive.rememberAdaptiveMetrics
 import com.example.somerslaunch.utils.AppSettingsRepository
 import com.example.somerslaunch.utils.LanguageManager
 import com.example.somerslaunch.utils.SystemLanguage
@@ -58,6 +61,7 @@ fun LanguageSelectionScreen(
     appSettingsRepository: AppSettingsRepository,
     onLanguageSaved: (String) -> Unit
 ) {
+    val metrics = rememberAdaptiveMetrics()
     val availableLanguages = remember { languageManager.getAvailableLanguages() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -74,26 +78,31 @@ fun LanguageSelectionScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .padding(horizontal = metrics.contentHorizontalPadding)
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(metrics.headerTopSpacer))
 
             Text(
                 text = stringResource(R.string.select_language),
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontSize = 24.sp),
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = metrics.titleFontSize
+                ),
                 color = Color.Black,
-                modifier = Modifier.padding(top = 8.dp, start = 24.dp, end = 24.dp)
+                modifier = Modifier.padding(top = metrics.topSectionSpacing)
             )
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
+                verticalArrangement = Arrangement.spacedBy(metrics.topSectionSpacing),
+                contentPadding = PaddingValues(bottom = metrics.listContentBottomPadding)
             ) {
                 items(availableLanguages) { language ->
                     LanguageItem(
                         language = language,
                         isSelected = language.code == selectedLanguage,
+                        metrics = metrics,
                         onClick = { selectedLanguage = language.code }
                     )
                 }
@@ -107,26 +116,21 @@ fun LanguageSelectionScreen(
 
                     Text(
                         text = capabilityText,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = metrics.secondaryFontSize),
                         color = Color.Gray,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(vertical = metrics.topSectionSpacing)
                     )
 
                     deviceLanguageMessage?.let {
                         Text(
                             text = it,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = metrics.secondaryFontSize),
                             color = Color(0xFF176FC6),
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(bottom = metrics.inlineMessageSpacing)
                         )
                     }
 
-                    TextButton(
-                        onClick = {
-                            deviceLanguageChanger.openDeviceLanguageSettingsFallback(context)
-                        },
-                        modifier = Modifier.padding(horizontal = 24.dp)
-                    ) {
+                    TextButton(onClick = { deviceLanguageChanger.openDeviceLanguageSettingsFallback(context) }) {
                         Text(
                             text = stringResource(R.string.open_device_language_settings),
                             color = Color(0xFF176FC6)
@@ -140,8 +144,8 @@ fun LanguageSelectionScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .height(64.dp),
+                .padding(vertical = metrics.bottomAreaVerticalPadding)
+                .heightIn(min = metrics.bottomAreaMinHeight),
             contentAlignment = Alignment.Center
         ) {
             Row(
@@ -149,7 +153,7 @@ fun LanguageSelectionScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(metrics.iconButtonSize)) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_back),
                         contentDescription = stringResource(R.string.back),
@@ -183,8 +187,8 @@ fun LanguageSelectionScreen(
                     },
                     enabled = !isSaving,
                     modifier = Modifier
-                        .width(108.dp)
-                        .height(48.dp),
+                        .widthIn(min = metrics.secondaryActionButtonMinWidth, max = metrics.secondaryActionButtonMaxWidth)
+                        .height(metrics.secondaryActionButtonHeight),
                     shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF176FC6))
                 ) {
@@ -200,11 +204,16 @@ fun LanguageSelectionScreen(
 }
 
 @Composable
-fun LanguageItem(language: SystemLanguage, isSelected: Boolean, onClick: () -> Unit) {
+fun LanguageItem(
+    language: SystemLanguage,
+    isSelected: Boolean,
+    metrics: AppAdaptiveMetrics,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = metrics.listItemHorizontalPadding)
             .clickable { onClick() },
         shape = RoundedCornerShape(30.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -226,7 +235,7 @@ fun LanguageItem(language: SystemLanguage, isSelected: Boolean, onClick: () -> U
                 )
                 Text(
                     text = language.nativeName,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = metrics.secondaryFontSize),
                     color = Color.Gray
                 )
             }

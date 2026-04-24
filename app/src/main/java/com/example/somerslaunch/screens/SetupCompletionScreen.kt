@@ -12,14 +12,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -30,7 +28,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -42,11 +39,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.somerslaunch.R
+import com.example.somerslaunch.ui.adaptive.AppAdaptiveMetrics
+import com.example.somerslaunch.ui.adaptive.rememberAdaptiveMetrics
+import com.example.somerslaunch.ui.theme.SomersLaunchTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -80,6 +80,8 @@ fun SetupCompletionScreen(
     appCloser: AppCloser,
     viewModel: SetupCompletionViewModel = viewModel()
 ) {
+    val metrics = rememberAdaptiveMetrics()
+
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             if (event is SetupCompletionEvent.CloseApp) {
@@ -92,23 +94,24 @@ fun SetupCompletionScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = metrics.contentHorizontalPadding)
     ) {
         Text(
             text = stringResource(R.string.setup_complete_title),
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold,
-                fontSize = 24.sp
+                fontSize = metrics.titleFontSize
             ),
             color = Color.Black,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
-                .padding(top = 124.dp)
+                .padding(top = metrics.titleTopPadding)
         )
 
         SuccessIllustration(
+            metrics = metrics,
             modifier = Modifier.align(Alignment.Center)
         )
 
@@ -116,9 +119,10 @@ fun SetupCompletionScreen(
             onClick = viewModel::onStartWorkClicked,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 56.dp)
-                .width(220.dp)
-                .height(56.dp),
+                .padding(bottom = metrics.bottomButtonBottomPadding)
+                .fillMaxWidth(metrics.primaryButtonWidthFraction)
+                .widthIn(min = metrics.primaryButtonMinWidth, max = metrics.primaryButtonMaxWidth)
+                .height(metrics.primaryButtonHeight),
             shape = RoundedCornerShape(28.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF176FC6)
@@ -137,6 +141,7 @@ fun SetupCompletionScreen(
 
 @Composable
 private fun SuccessIllustration(
+    metrics: AppAdaptiveMetrics,
     modifier: Modifier = Modifier
 ) {
     val circleScale = remember { Animatable(0.72f) }
@@ -193,7 +198,7 @@ private fun SuccessIllustration(
     }
 
     Box(
-        modifier = modifier.size(220.dp),
+        modifier = modifier.size(metrics.setupIllustrationContainerSize),
         contentAlignment = Alignment.Center
     ) {
         Canvas(
@@ -219,7 +224,7 @@ private fun SuccessIllustration(
 
         Canvas(
             modifier = Modifier
-                .size(118.dp)
+                .size(metrics.setupIllustrationIconSize)
                 .scale(circleScale.value * iconScale)
                 .alpha(circleAlpha.value)
                 .background(
@@ -266,5 +271,17 @@ private fun SuccessIllustration(
                 )
             }
         }
+    }
+}
+
+@Preview(name = "Setup Compact", widthDp = 320, heightDp = 568)
+@Preview(name = "Setup Medium", widthDp = 411, heightDp = 891)
+@Preview(name = "Setup Expanded", widthDp = 840, heightDp = 1280)
+@Composable
+private fun SetupCompletionScreenPreview() {
+    SomersLaunchTheme {
+        SetupCompletionScreen(appCloser = object : AppCloser {
+            override fun closeApp() = Unit
+        })
     }
 }

@@ -18,9 +18,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,11 +56,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import androidx.core.content.ContextCompat
 import com.example.somerslaunch.OnboardingProcess
 import com.example.somerslaunch.R
+import com.example.somerslaunch.ui.adaptive.AppAdaptiveMetrics
+import com.example.somerslaunch.ui.adaptive.rememberAdaptiveMetrics
 import com.example.somerslaunch.utils.WifiFailureReason
 import com.example.somerslaunch.utils.WifiManager
 import com.example.somerslaunch.utils.WifiNetwork
@@ -76,8 +79,6 @@ internal fun resolveConfirmedConnectedSsid(
     }
 }
 
-
-
 @Composable
 private fun failureReasonText(reason: WifiFailureReason): String {
     return when (reason) {
@@ -87,7 +88,12 @@ private fun failureReasonText(reason: WifiFailureReason): String {
 }
 
 @Composable
-private fun WifiNetworkItem(network: WifiNetwork, isConnected: Boolean, onClick: () -> Unit) {
+private fun WifiNetworkItem(
+    network: WifiNetwork,
+    isConnected: Boolean,
+    metrics: AppAdaptiveMetrics,
+    onClick: () -> Unit
+) {
     val signalStrength = when {
         network.level > -50 -> 4
         network.level > -60 -> 3
@@ -104,7 +110,7 @@ private fun WifiNetworkItem(network: WifiNetwork, isConnected: Boolean, onClick:
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = metrics.listItemHorizontalPadding)
             .height(IntrinsicSize.Min)
             .clickable(enabled = !isConnected, onClick = onClick),
         shape = RoundedCornerShape(30.dp),
@@ -136,7 +142,7 @@ private fun WifiNetworkItem(network: WifiNetwork, isConnected: Boolean, onClick:
                     if (isConnected) {
                         Text(
                             text = stringResource(R.string.connected),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = metrics.secondaryFontSize),
                             color = Color(0xFF176FC6)
                         )
                     }
@@ -148,6 +154,7 @@ private fun WifiNetworkItem(network: WifiNetwork, isConnected: Boolean, onClick:
 
 @Composable
 fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Unit) {
+    val metrics = rememberAdaptiveMetrics()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val connectionFailedGeneric = stringResource(R.string.connection_failed_generic)
@@ -202,17 +209,30 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
     val proceedState = confirmedConnectedSsid?.let { WifiUiState.Connected(it) }
     val isConnected = proceedState?.let(onboardingProcess::canProceedFromWifi) ?: false
 
-    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(horizontal = metrics.contentHorizontalPadding)
+    ) {
         Column(modifier = Modifier.weight(1f)) {
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(metrics.headerTopSpacer))
             Text(
                 text = stringResource(R.string.select_wifi),
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold,fontSize = 24.sp),
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = metrics.titleFontSize
+                ),
                 color = Color.Black,
-                modifier = Modifier.padding(top = 8.dp, start = 24.dp, end = 24.dp)
+                modifier = Modifier.padding(top = metrics.topSectionSpacing)
             )
 
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = metrics.inlineMessageSpacing),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Spacer(modifier = Modifier.weight(1f))
                 TextButton(onClick = { refreshState() }) {
                     Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = Color(0xFF176FC6))
@@ -225,17 +245,20 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
                 WifiUiState.PermissionRequired -> {
                     Text(
                         text = stringResource(R.string.permission_required),
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier.padding(metrics.stateMessagePadding),
                         color = Color.Gray
                     )
                 }
 
                 WifiUiState.WifiDisabled -> {
                     Card(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFFF5722).copy(alpha = 0.1f))
                     ) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(text = stringResource(R.string.wifi_disabled), modifier = Modifier.weight(1f), color = Color(0xFFFF5722))
                             Button(
                                 onClick = {
@@ -270,8 +293,8 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
 
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(bottom = 16.dp)
+                        verticalArrangement = Arrangement.spacedBy(metrics.topSectionSpacing),
+                        contentPadding = PaddingValues(bottom = metrics.listContentBottomPadding)
                     ) {
                         if (connectedNetwork != null) {
                             item {
@@ -279,9 +302,9 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
                                     text = stringResource(R.string.connected),
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                     color = Color(0xFF176FC6),
-                                    modifier = Modifier.padding(horizontal = 24.dp)
+                                    modifier = Modifier.padding(horizontal = metrics.listItemHorizontalPadding)
                                 )
-                                WifiNetworkItem(network = connectedNetwork, isConnected = true, onClick = {})
+                                WifiNetworkItem(network = connectedNetwork, isConnected = true, metrics = metrics, onClick = {})
                             }
                         }
 
@@ -291,13 +314,16 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
                                     text = stringResource(R.string.available_networks),
                                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                                     color = Color.Gray,
-                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                                    modifier = Modifier.padding(
+                                        horizontal = metrics.listItemHorizontalPadding,
+                                        vertical = metrics.topSectionSpacing
+                                    )
                                 )
                             }
                         }
 
                         items(availableNetworks) { network ->
-                            WifiNetworkItem(network = network, isConnected = false) {
+                            WifiNetworkItem(network = network, isConnected = false, metrics = metrics) {
                                 selectedNetwork = network
                                 password = ""
                                 connectionError = null
@@ -308,9 +334,12 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
                         item {
                             Text(
                                 text = stringResource(R.string.sim_setup_unavailable),
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = metrics.secondaryFontSize),
                                 color = Color.Gray,
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                                modifier = Modifier.padding(
+                                    horizontal = metrics.listItemHorizontalPadding,
+                                    vertical = metrics.inlineMessageSpacing
+                                )
                             )
                         }
                     }
@@ -322,15 +351,20 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
 
                 is WifiUiState.Connected -> {
                     Column {
-                        Text(text = stringResource(R.string.connected), modifier = Modifier.padding(horizontal = 24.dp), color = Color(0xFF176FC6))
+                        Text(
+                            text = stringResource(R.string.connected),
+                            modifier = Modifier.padding(horizontal = metrics.listItemHorizontalPadding),
+                            color = Color(0xFF176FC6)
+                        )
                         WifiNetworkItem(
                             network = WifiNetwork(state.ssid, "", -45, ""),
                             isConnected = true,
+                            metrics = metrics,
                             onClick = {}
                         )
                         TextButton(
                             onClick = { refreshState() },
-                            modifier = Modifier.padding(horizontal = 24.dp)
+                            modifier = Modifier.padding(horizontal = metrics.listItemHorizontalPadding)
                         ) {
                             Text(text = stringResource(R.string.show_available_networks), color = Color(0xFF176FC6))
                         }
@@ -347,20 +381,32 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
             }
         }
 
-        Box(modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 16.dp, vertical = 8.dp).height(64.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(vertical = metrics.bottomAreaVerticalPadding)
+                .heightIn(min = metrics.bottomAreaMinHeight)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(48.dp)) {
-                    Icon(painter = painterResource(id = R.drawable.ic_back), contentDescription = stringResource(R.string.back), tint = Color(0xFF176FC6))
+                IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(metrics.iconButtonSize)) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_back),
+                        contentDescription = stringResource(R.string.back),
+                        tint = Color(0xFF176FC6)
+                    )
                 }
 
                 Button(
                     onClick = { if (isConnected) onWifiConnected() },
                     enabled = isConnected,
-                    modifier = Modifier.width(108.dp).height(48.dp),
+                    modifier = Modifier
+                        .widthIn(min = metrics.secondaryActionButtonMinWidth, max = metrics.secondaryActionButtonMaxWidth)
+                        .height(metrics.secondaryActionButtonHeight),
                     shape = RoundedCornerShape(20.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isConnected) Color(0xFF176FC6) else Color.Gray.copy(alpha = 0.5f)
