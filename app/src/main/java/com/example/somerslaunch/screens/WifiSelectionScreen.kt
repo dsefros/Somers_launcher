@@ -222,7 +222,7 @@ fun WifiSelectionScreen(navController: NavController, onWifiConnected: () -> Uni
                     fontSize = metrics.titleFontSize
                 ),
                 color = Color.Black,
-                modifier = Modifier.padding(top = metrics.titleTopPadding)
+                modifier = Modifier.padding(top = metrics.listScreenTitleTopPadding)
             )
 
             Row(

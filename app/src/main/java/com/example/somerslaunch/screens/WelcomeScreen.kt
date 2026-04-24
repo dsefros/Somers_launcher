@@ -59,7 +59,7 @@ fun WelcomeScreen(
                 ),
                 color = Color.Black,
                 modifier = Modifier
-                    .padding(top = metrics.titleTopPadding)
+                    .padding(top = metrics.heroTitleTopPadding)
                     .fillMaxWidth(),
                 textAlign = TextAlign.Center
             )

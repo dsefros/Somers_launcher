@@ -19,7 +19,8 @@ enum class ScreenSizeClass {
 data class AppAdaptiveMetrics(
     val sizeClass: ScreenSizeClass,
     val contentHorizontalPadding: Dp,
-    val titleTopPadding: Dp,
+    val heroTitleTopPadding: Dp,
+    val listScreenTitleTopPadding: Dp,
     val topSectionSpacing: Dp,
     val listItemHorizontalPadding: Dp,
     val listContentBottomPadding: Dp,
@@ -62,7 +63,8 @@ fun rememberAdaptiveMetrics(): AppAdaptiveMetrics {
         }
 
         val verticalBaseDp = minOf(heightDp, (widthDp * 2.1f).toInt())
-        val titleTopPadding = (verticalBaseDp * 0.11f).dp.coerceIn(52.dp, 116.dp)
+        val heroTitleTopPadding = (verticalBaseDp * 0.11f).dp.coerceIn(52.dp, 116.dp)
+        val listScreenTitleTopPadding = (verticalBaseDp * 0.07f).dp.coerceIn(28.dp, 72.dp)
         val statusBottomPadding = (verticalBaseDp * 0.12f).dp.coerceIn(54.dp, 122.dp)
 
         // Базовый размер иллюстраций считаем в первую очередь от ширины экрана,
@@ -73,7 +75,8 @@ fun rememberAdaptiveMetrics(): AppAdaptiveMetrics {
             ScreenSizeClass.Compact -> AppAdaptiveMetrics(
                 sizeClass = sizeClass,
                 contentHorizontalPadding = 16.dp,
-                titleTopPadding = titleTopPadding,
+                heroTitleTopPadding = heroTitleTopPadding,
+                listScreenTitleTopPadding = listScreenTitleTopPadding,
                 topSectionSpacing = 8.dp,
                 listItemHorizontalPadding = 16.dp,
                 listContentBottomPadding = 12.dp,
@@ -105,7 +108,8 @@ fun rememberAdaptiveMetrics(): AppAdaptiveMetrics {
             ScreenSizeClass.Medium -> AppAdaptiveMetrics(
                 sizeClass = sizeClass,
                 contentHorizontalPadding = 20.dp,
-                titleTopPadding = titleTopPadding,
+                heroTitleTopPadding = heroTitleTopPadding,
+                listScreenTitleTopPadding = listScreenTitleTopPadding,
                 topSectionSpacing = 10.dp,
                 listItemHorizontalPadding = 24.dp,
                 listContentBottomPadding = 16.dp,
@@ -137,7 +141,8 @@ fun rememberAdaptiveMetrics(): AppAdaptiveMetrics {
             ScreenSizeClass.Expanded -> AppAdaptiveMetrics(
                 sizeClass = sizeClass,
                 contentHorizontalPadding = 28.dp,
-                titleTopPadding = titleTopPadding,
+                heroTitleTopPadding = heroTitleTopPadding,
+                listScreenTitleTopPadding = listScreenTitleTopPadding,
                 topSectionSpacing = 12.dp,
                 listItemHorizontalPadding = 32.dp,
                 listContentBottomPadding = 20.dp,

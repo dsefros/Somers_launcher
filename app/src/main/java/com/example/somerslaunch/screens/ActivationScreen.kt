@@ -110,7 +110,7 @@ private fun ActivationScreenContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter)
-                .padding(top = metrics.titleTopPadding),
+                .padding(top = metrics.heroTitleTopPadding),
             text = stringResource(R.string.activation_wait_title),
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold,
