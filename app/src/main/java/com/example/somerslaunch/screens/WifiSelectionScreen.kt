@@ -110,7 +110,6 @@ private fun WifiNetworkItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = metrics.listItemHorizontalPadding)
             .height(IntrinsicSize.Min)
             .clickable(enabled = !isConnected, onClick = onClick),
         shape = RoundedCornerShape(30.dp),
